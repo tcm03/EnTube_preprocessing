@@ -12,11 +12,9 @@ class EnTubeDataset(Dataset):
         self,   
         folder_paths: List[str],
         image_processors: List[BaseImageProcessor],
-        device: str
     ) -> None:
         self.file_paths = []
         self.image_processors = image_processors
-        self.device = device
 
         for folder_path in folder_paths:
             file_names = os.listdir(folder_path)
@@ -32,7 +30,7 @@ class EnTubeDataset(Dataset):
         #         for file_name in file_names:
         #             file_path = os.path.join(folder_path, file_name)
         #             print(f'@tcm: In EnTubeDataset.__init__(): file_path={file_path}')
-        #             future = executor.submit(process_video_frames, file_path, image_processor, device)
+        #             future = executor.submit(process_video_frames, file_path, image_processor)
         #             futures.append(future)
 
         #     for future in as_completed(futures):
@@ -49,7 +47,7 @@ class EnTubeDataset(Dataset):
 
     def __getitem__(self, idx):
         print(f'@tcm: In EnTubeDataset.__getitem__(): idx={idx}')
-        video, image_size = process_video_frames(self.file_paths[idx], self.image_processors, self.device)
+        video, image_size = process_video_frames(self.file_paths[idx], self.image_processors)
         return video, image_size
 
 def collate_fn(batch):
@@ -58,8 +56,19 @@ def collate_fn(batch):
     """
     assert isinstance(batch, list)
     assert isinstance(batch[0], tuple)
-    
+    print(f'@tcm: collate_fn')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     image_sizes = batch[0][1]
     batch_videos = [video for video, _ in batch]
-    batch_videos = [list(videos) for videos in zip(*batch_videos)]
+    # batch_videos = [[video.to(device) for video in videos] for videos in zip(*batch_videos)]
+    tmp_batch_videos = []
+    for i, videos in enumerate(zip(*batch_videos)):
+        print(f'@tcm: processor {i}')
+        tmp = []
+        for j, video in enumerate(videos):
+            print(f'@tcm: video {j} shape: {video.shape}')
+            video = video.to(device)
+            tmp.append(video)
+        tmp_batch_videos.append(tmp)
+    batch_videos = tmp_batch_videos
     return batch_videos, image_sizes

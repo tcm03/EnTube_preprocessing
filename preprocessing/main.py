@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path.cwd()))
 from annotation.utils import get_optimal_workers
+import torch.multiprocessing as mp
 
 import os
 import argparse
@@ -63,6 +64,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # mp.set_start_method('spawn')
+
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
     processor = CambrianEncoders(cambrianConfig)
     image_processors = []
@@ -77,13 +80,11 @@ if __name__ == "__main__":
     folder_paths: List[str] = args.folders
     data_tensor = dict()
     
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    entube_dataset = EnTubeDataset(folder_paths, image_processors, device)
+    entube_dataset = EnTubeDataset(folder_paths, image_processors)
     dataloader = DataLoader(
         entube_dataset, 
-        batch_size=4, 
+        batch_size=1, 
         collate_fn=collate_fn,
-        # num_workers=get_optimal_workers()
         num_workers=1
     )
 

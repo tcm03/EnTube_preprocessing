@@ -22,8 +22,7 @@ def expand2square(pil_img, background_color):
 
 def process_images(
     images: torch.Tensor, 
-    image_processor: List[BaseImageProcessor],
-    device: str
+    image_processor: List[BaseImageProcessor]
 ) -> Union[torch.Tensor, List[torch.Tensor]]:
     # images.shape: (4294, 360, 640, 3)
     # print(f'@tcm: In process_images(): images.shape={images.shape}')
@@ -57,7 +56,7 @@ def process_images(
             list(batch_image_aux) for batch_image_aux in zip(*new_images_aux_list)
         ] # torch.Tensor(C, H, W) new_images_aux_list[num_processor][num_frames]
         new_images_aux_list = [
-            torch.stack(image_aux).half().to(device) for image_aux in new_images_aux_list
+            torch.stack(image_aux).half() for image_aux in new_images_aux_list
         ] # torch.Tensor(num_frames, C, H, W) new_images_aux_list[num_processor]
         return new_images_aux_list 
     else:
@@ -81,7 +80,6 @@ def process_images(
 def process_video_frames(
     video_path: str,
     image_processors: List[BaseImageProcessor],
-    device: str
 ) -> Tuple[List[torch.Tensor], List[Tuple[int, int]]]:
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     fps = float(vr.get_avg_fps())
@@ -99,15 +97,13 @@ def process_video_frames(
             img = vr[frame_index].asnumpy()
             sub_videos.append(img)
         sub_videos = np.stack(sub_videos) # shape: (num_frames, height, width, channels)
-        sub_videos = process_images(sub_videos, image_processors, device)
+        sub_videos = process_images(sub_videos, image_processors)
         print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
         assert len(sub_videos) == len(video)
         for j, sub_video in enumerate(sub_videos):
             video[j].append(sub_video)
         
-        del sub_videos
-        if 'cuda' in device:
-            torch.cuda.empty_cache()
+        # del sub_videos
 
     for i in range(len(video)):
         video[i] = torch.cat(video[i], dim=0)
@@ -120,7 +116,7 @@ def process_video_frames(
     # print(f'@tcm: In process_video_frames(): vectorize_time={time.time()-vectorize_time:4f}')
     # image_sizes = [video[0].shape[:2]]
     # process_time = time.time()
-    # video = process_images(video, image_processors, device)
+    # video = process_images(video, image_processors)
     # print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
     video = [item.unsqueeze(0) for item in video]
     return video, image_sizes
