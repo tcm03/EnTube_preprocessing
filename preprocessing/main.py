@@ -85,7 +85,7 @@ if __name__ == "__main__":
         entube_dataset, 
         batch_size=1, 
         collate_fn=collate_fn,
-        num_workers=1
+        num_workers=0
     )
 
     for batch_idx, (videos, image_sizes) in enumerate(dataloader):
