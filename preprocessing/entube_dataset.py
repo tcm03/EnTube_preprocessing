@@ -20,15 +20,15 @@ class EnTubeDataset(Dataset):
             file_names = os.listdir(folder_path)
             for file_name in file_names:
                 file_path = os.path.join(folder_path, file_name)
-                self.file_paths.append(file_path)      
+                self.file_paths.append((file_path, file_name))      
 
     def __len__(self):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
         print(f'@tcm: In EnTubeDataset.__getitem__(): idx={idx}')
-        video, image_size = process_video_frames(self.file_paths[idx], self.image_processors)
-        return video, image_size
+        video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
+        return video, image_size, self.file_paths[idx][1]
 
 def collate_fn(batch):
     """
@@ -39,7 +39,7 @@ def collate_fn(batch):
     print(f'@tcm: collate_fn')
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     image_sizes = batch[0][1]
-    batch_videos = [video for video, _ in batch]
+    batch_videos = [video for video, _, _ in batch] # ignore image_size and file_name
     # batch_videos = [[video.to(device) for video in videos] for videos in zip(*batch_videos)]
     tmp_batch_videos = []
     for i, videos in enumerate(zip(*batch_videos)):
@@ -51,4 +51,4 @@ def collate_fn(batch):
             tmp.append(video)
         tmp_batch_videos.append(tmp)
     batch_videos = tmp_batch_videos
-    return batch_videos, image_sizes
+    return batch_videos, image_sizes, (file_name for _, _, file_name in batch)

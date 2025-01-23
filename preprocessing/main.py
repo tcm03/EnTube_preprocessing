@@ -17,6 +17,7 @@ from multiprocessing import cpu_count
 from entube_dataset import EnTubeDataset, collate_fn
 from torch.utils.data import Dataset, DataLoader
 from transformers import BaseImageProcessor
+from constants import *
 
 
 # Configure logging
@@ -64,6 +65,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    os.makedirs(SAFETENSORS_PATH, exist_ok=True)
     # mp.set_start_method('spawn')
 
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
@@ -79,8 +81,6 @@ if __name__ == "__main__":
         image_processors.append(vision_tower_aux.image_processor)
 
     folder_paths: List[str] = args.folders
-    data_tensor = dict()
-    
     entube_dataset = EnTubeDataset(folder_paths, image_processors)
     dataloader = DataLoader(
         entube_dataset, 
@@ -88,14 +88,21 @@ if __name__ == "__main__":
         collate_fn=collate_fn,
     )
 
-    for batch_idx, (videos, image_sizes) in enumerate(dataloader):
+    for batch_idx, (videos, image_sizes, file_names) in enumerate(dataloader):
         print(f"Processing batch {batch_idx + 1}/{len(dataloader)}")
         assert isinstance(videos, list), "List of videos features for each processor (vision encoder)"
         assert isinstance(videos[0], list) or isinstance(videos[0], torch.Tensor), "List of videos in the batch"
+        # tensor(num_reduced_frames, len=576, hidden_dim=1152/1536) image_aux_features_list[num_processors]
         image_aux_features_list = processor.prepare_mm_features(videos, image_sizes)
-        for i, image_aux_features in enumerate(image_aux_features_list):
-            print(f"@tcm: In main(): image_aux_features[{i}].shape={image_aux_features.shape}")
-        break
+        tensor_siglip = image_aux_features_list[0].to('cpu')
+        tensor_dino = image_aux_features_list[1].to('cpu')
+        file_name = file_names[0] # the batch has only one file
+        save_tensor = {
+            file_name + '-siglip': tensor_siglip,
+            file_name + '-dino': tensor_dino
+        }
+        save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_name + '.safetensors'))
+        
         
 
     # save_file(dict(data_tensor), args.output_file)
