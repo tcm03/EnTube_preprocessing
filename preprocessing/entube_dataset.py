@@ -63,10 +63,10 @@ def collate_fn(batch):
     # batch_videos = [[video.to(device) for video in videos] for videos in zip(*batch_videos)]
     tmp_batch_videos = []
     for i, videos in enumerate(zip(*batch_videos)):
-        print(f'@tcm: processor {i}')
+        # print(f'@tcm: processor {i}')
         tmp = []
         for j, video in enumerate(videos):
-            print(f'@tcm: video {j} shape: {video.shape}')
+            # print(f'@tcm: video {j} shape: {video.shape}')
             video = video.to(device)
             tmp.append(video)
         tmp_batch_videos.append(tmp)

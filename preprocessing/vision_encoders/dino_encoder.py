@@ -5,6 +5,8 @@ from transformers import AutoImageProcessor, Dinov2Config, Dinov2Model
 
 from .base_encoder import BaseVisionTower, ProcessorWrapper
 
+import time
+
 
 class DinoVisionTower(BaseVisionTower):
     def __init__(self, vision_tower, args, delay_load=False):
@@ -24,7 +26,6 @@ class DinoVisionTower(BaseVisionTower):
             self.cfg_only = Dinov2Config.from_pretrained(self.vision_tower_name)
 
     def load_model(self, device_map=None):
-
         self.vision_tower = Dinov2Model.from_pretrained(self.vision_tower_name)
         """ValueError: Dinov2Model does not support `device_map='auto'`. To implement support, the model class needs to implement the `_no_split_modules` attribute."""
         self.vision_tower._no_split_modules = ["Dinov2SwiGLUFFN"]
@@ -37,7 +38,6 @@ class DinoVisionTower(BaseVisionTower):
         default_shortest_ratio = 8 / 7  # 224/256
         # shortest_edge = int(default_shortest_ratio * self._image_size)
         shortest_edge = self._image_size
-
         processor = AutoImageProcessor.from_pretrained(
             self.vision_tower_name,
             crop_size=dict(height=self._image_size, width=self._image_size),
@@ -58,6 +58,7 @@ class DinoVisionTower(BaseVisionTower):
 
         self.vision_tower.requires_grad_(self.unfreeze_mm_vision_tower)
         self.is_loaded = True
+        print(f'@tcm: In DinoVisionTower.load_model(): Dinov2Model loaded')
 
     @property
     def image_size(self):
@@ -109,9 +110,13 @@ class DinoVisionTower(BaseVisionTower):
     def _forward(self, images):
         # logger.warning(f"images shape: {images.shape}")
         with torch.set_grad_enabled(self.unfreeze_mm_vision_tower):
+            print(f'@tcm: In DinoVisionTower._forward(): Dinov2Model.forward()...')
+            print(f'@tcm: In DinoVisionTower._forward(): device={self.device}')
+            dinov2model_start_time = time.time()
             image_forward_outs = self.vision_tower.forward(
                 images.to(device=self.device, dtype=self.dtype)
             )
+            print(f'@tcm: In DinoVisionTower._forward(): Dinov2Model.forward()... done in {time.time() - dinov2model_start_time} seconds')
             # logger.warning(f"image_forward_outs shape: {image_forward_outs['last_hidden_state'].shape}")
             image_features = self.feature_select(image_forward_outs).to(images.dtype)
             # logger.warning(f"image_features shape: {image_features.shape}")

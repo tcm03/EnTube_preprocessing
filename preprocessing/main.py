@@ -69,13 +69,13 @@ if __name__ == "__main__":
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
     processor = CambrianEncoders(cambrianConfig)
     image_processors = []
-    if not processor.vision_tower_aux_list[0].is_loaded:
-        processor.vision_tower_aux_list[0].load_model()
-    image_processors.append(processor.vision_tower_aux_list[0].image_processor)
-    # for vision_tower_aux in processor.vision_tower_aux_list:
-    #     if not vision_tower_aux.is_loaded:
-    #         vision_tower_aux.load_model()
-    #     image_processors.append(vision_tower_aux.image_processor)
+    # if not processor.vision_tower_aux_list[0].is_loaded:
+    #     processor.vision_tower_aux_list[0].load_model()
+    # image_processors.append(processor.vision_tower_aux_list[0].image_processor)
+    for vision_tower_aux in processor.vision_tower_aux_list:
+        if not vision_tower_aux.is_loaded:
+            vision_tower_aux.load_model()
+        image_processors.append(vision_tower_aux.image_processor)
 
     folder_paths: List[str] = args.folders
     data_tensor = dict()
@@ -85,7 +85,6 @@ if __name__ == "__main__":
         entube_dataset, 
         batch_size=1, 
         collate_fn=collate_fn,
-        num_workers=0
     )
 
     for batch_idx, (videos, image_sizes) in enumerate(dataloader):

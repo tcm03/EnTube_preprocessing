@@ -39,6 +39,7 @@ class SiglipVisionTower(BaseVisionTower):
 
         self.vision_tower.requires_grad_(self.unfreeze_mm_vision_tower)
         self.is_loaded = True
+        print(f'@tcm: In SiglipVisionTower.load_model(): SiglipVisionModel loaded')
 
     def interpolate(self, image_features):
         if self._interp_size is None:
@@ -70,9 +71,13 @@ class SiglipVisionTower(BaseVisionTower):
 
     def _forward(self, images, interpolate_token=576):
         with torch.set_grad_enabled(self.unfreeze_mm_vision_tower):
+            print(f'@tcm: In SiglipVisionTower._forward(): SiglipVisionModel.forward()...')
+            print(f'@tcm: In SiglipVisionTower._forward(): device={self.device}')
+            siglipmodel_start_time = time.time()
             image_features = self.vision_tower.forward(
                 images.to(device=self.device, dtype=self.dtype),
                 output_hidden_states=True,
             ).hidden_states[-1]
+            print(f'@tcm: In SiglipVisionTower._forward(): SiglipVisionModel.forward()... done in {time.time() - siglipmodel_start_time} seconds')
             interp_features = self.interpolate(image_features)
             return interp_features
