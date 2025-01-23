@@ -112,7 +112,7 @@ class DinoVisionTower(BaseVisionTower):
         with torch.set_grad_enabled(self.unfreeze_mm_vision_tower):
             # print(f'@tcm: In DinoVisionTower._forward(): Dinov2Model.forward()...')
             # print(f'@tcm: In DinoVisionTower._forward(): device={self.device}')
-            dinov2model_start_time = time.time()
+            # dinov2model_start_time = time.time()
             image_forward_outs = self.vision_tower.forward(
                 images.to(device=self.device, dtype=self.dtype)
             )

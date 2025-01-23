@@ -92,7 +92,7 @@ def process_video_frames(
         # print(f'@tcm: In process_video_frames(): segment {int(i/CHUNK_SIZE)}')
         sub_frame_indices = frame_indices[i:min(i+CHUNK_SIZE, len(frame_indices))]
         sub_videos = []
-        process_time = time.time()
+        # process_time = time.time()
         for frame_index in sub_frame_indices:
             img = vr[frame_index].asnumpy()
             sub_videos.append(img)

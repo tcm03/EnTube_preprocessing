@@ -239,13 +239,13 @@ class CambrianEncoders:
             concat_image_aux = torch.cat([image for image in image_aux], dim=0)
             new_image_aux_list.append(concat_image_aux)
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting DINOv2 features...')
-        dinov2_start_time = time.time()
+        # dinov2_start_time = time.time()
         image_aux_features_dino = self.encode_images(
             new_image_aux_list, encode_type="dino"
         )
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): DINOv2 time: {time.time() - dinov2_start_time:4f}')
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): selecting frames...')
-        select_frame_start_time = time.time()
+        # select_frame_start_time = time.time()
         (
             image_aux_features_dino,
             split_sizes,
@@ -260,7 +260,7 @@ class CambrianEncoders:
         )
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): select frame time: {time.time() - select_frame_start_time:4f}')
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting SIGLIP features...')
-        siglip_start_time = time.time()
+        # siglip_start_time = time.time()
         image_aux_features_siglip = self.encode_images(
             new_image_aux_list, encode_type="siglip"
         )
