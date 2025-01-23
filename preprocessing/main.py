@@ -63,7 +63,7 @@ if __name__ == "__main__":
         help = 'Path to configuration file of encoders parameters'
     )
     args = parser.parse_args()
-
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # mp.set_start_method('spawn')
 
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
@@ -75,6 +75,7 @@ if __name__ == "__main__":
     for vision_tower_aux in processor.vision_tower_aux_list:
         if not vision_tower_aux.is_loaded:
             vision_tower_aux.load_model()
+        vision_tower_aux.to(device)
         image_processors.append(vision_tower_aux.image_processor)
 
     folder_paths: List[str] = args.folders
