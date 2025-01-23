@@ -96,12 +96,14 @@ if __name__ == "__main__":
         image_aux_features_list = processor.prepare_mm_features(videos, image_sizes)
         tensor_siglip = image_aux_features_list[0].to('cpu')
         tensor_dino = image_aux_features_list[1].to('cpu')
-        file_name = file_names[0] # the batch has only one file
-        save_tensor = {
-            file_name + '-siglip': tensor_siglip,
-            file_name + '-dino': tensor_dino
-        }
-        save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_name + '.safetensors'))
+        # file_name = file_names[0] # the batch has only one file
+        for file_name in file_names:
+            print(f'file_name={file_name}')
+            save_tensor = {
+                file_name + '-siglip': tensor_siglip,
+                file_name + '-dino': tensor_dino
+            }
+            save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_name + '.safetensors'))
         
         
 
