@@ -20,27 +20,7 @@ class EnTubeDataset(Dataset):
             file_names = os.listdir(folder_path)
             for file_name in file_names:
                 file_path = os.path.join(folder_path, file_name)
-                self.file_paths.append(file_path)
-
-        # with ThreadPoolExecutor(max_workers=get_optimal_workers()) as executor:
-        #     futures = []
-        #     for folder_path in folder_paths:
-        #         print(f'@tcm: In EnTubeDataset.__init__(): folder_path={folder_path}')
-        #         file_names = os.listdir(folder_path)
-        #         for file_name in file_names:
-        #             file_path = os.path.join(folder_path, file_name)
-        #             print(f'@tcm: In EnTubeDataset.__init__(): file_path={file_path}')
-        #             future = executor.submit(process_video_frames, file_path, image_processor)
-        #             futures.append(future)
-
-        #     for future in as_completed(futures):
-        #         result = future.result()
-        #         if result is not None:
-        #             video, image_size = result
-        #             self.videos.append(video)
-        #             self.image_sizes.append(image_size)
-
-        
+                self.file_paths.append(file_path)      
 
     def __len__(self):
         return len(self.file_paths)
