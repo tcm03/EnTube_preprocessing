@@ -23,12 +23,8 @@ from constants import *
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def get_optimal_workers() -> int:
-    """Determine the optimal number of workers based on available CPU cores."""
-    try:
-        return max(1, cpu_count() - 1)  # Leave one core free
-    except (NotImplementedError, ValueError):
-        return 1  # Fallback to a single worker in case of an error
+def extract_fileid(file_path: str) -> str:
+    return file_path.split('.')[0]
 
 def extract_features(processor: CambrianEncoders, file_path: str, file_name: str) -> Dict[str, torch.Tensor]:
     try:
@@ -99,11 +95,12 @@ if __name__ == "__main__":
         # file_name = file_names[0] # the batch has only one file
         for file_name in file_names:
             print(f'file_name={file_name}')
+            file_id = extract_fileid(file_name)
             save_tensor = {
-                file_name + '-siglip': tensor_siglip,
-                file_name + '-dino': tensor_dino
+                file_id + '-siglip': tensor_siglip,
+                file_id + '-dino': tensor_dino
             }
-            save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_name + '.safetensors'))
+            save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_id + '.safetensors'))
         
         
 
