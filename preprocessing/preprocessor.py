@@ -114,7 +114,7 @@ class CambrianEncoders:
             if isinstance(frame_features, torch.Tensor):
                 print(f'@tcm: In CambrianEncoders.select_frame(): frame_features shape: {frame_features.shape}')
             original_width, original_height = image_sizes[i_batch]
-            if getattr(self.get_model().config, "highres", False):
+            if getattr(self.config, "highres", False):
                 token_per_frame = self.config.lowres_token ** 2
             else:
                 token_per_frame = self.config.image_token_len
