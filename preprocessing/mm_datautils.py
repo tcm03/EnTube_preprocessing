@@ -84,7 +84,7 @@ def process_video_frames(
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     fps = float(vr.get_avg_fps())
     frame_indices = np.array([i for i in range(0, len(vr), round(fps),)])
-    # print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
+    print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
     image_sizes = [vr[0].shape[:2]]
 
     video = [[] for _ in range(len(image_processors))]
