@@ -84,12 +84,12 @@ def process_video_frames(
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     fps = float(vr.get_avg_fps())
     frame_indices = np.array([i for i in range(0, len(vr), round(fps),)])
-    print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
+    # print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
     image_sizes = [vr[0].shape[:2]]
 
     video = [[] for _ in range(len(image_processors))]
     for i in range(0, len(frame_indices), CHUNK_SIZE):
-        print(f'@tcm: In process_video_frames(): segment {int(i/CHUNK_SIZE)}')
+        # print(f'@tcm: In process_video_frames(): segment {int(i/CHUNK_SIZE)}')
         sub_frame_indices = frame_indices[i:min(i+CHUNK_SIZE, len(frame_indices))]
         sub_videos = []
         process_time = time.time()
@@ -98,7 +98,7 @@ def process_video_frames(
             sub_videos.append(img)
         sub_videos = np.stack(sub_videos) # shape: (num_frames, height, width, channels)
         sub_videos = process_images(sub_videos, image_processors)
-        print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
+        # print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
         assert len(sub_videos) == len(video)
         for j, sub_video in enumerate(sub_videos):
             video[j].append(sub_video)
@@ -118,5 +118,5 @@ def process_video_frames(
     # process_time = time.time()
     # video = process_images(video, image_processors)
     # print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
-    video = [item.unsqueeze(0) for item in video]
+    # video = [item.unsqueeze(0) for item in video] # data collator class/ func will take care of batching
     return video, image_sizes

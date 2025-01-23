@@ -3,13 +3,12 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path.cwd() / "annotation"))
 
-import decord as de
+# import decord
 from datatypes import Metadata
 from typing import List
 import os
 from multiprocessing import cpu_count
 import traceback
-from pathlib import Path
 
 
 def convert_to_linux_path(path: str) -> str:
@@ -25,8 +24,9 @@ def extract_label(path: str) -> str:
 
 def get_duration(path: str) -> int:
     try:
-        vr = de.VideoReader(path, ctx=de.cpu(0), num_threads=1)
-        return int(len(vr) / vr.get_avg_fps())
+        # vr = decord.VideoReader(path, ctx=de.cpu(0), num_threads=1)
+        # return int(len(vr) / vr.get_avg_fps())
+        return 100
     except Exception as e:
         print(f"Error reading video {path}: {e}")
         print(traceback.format_exc())  # Include the full traceback for debugging
