@@ -6,6 +6,8 @@ from mm_datautils import process_video_frames
 from transformers import BaseImageProcessor
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import decord
+
 class EnTubeDataset(Dataset):
     
     def __init__(
@@ -20,7 +22,12 @@ class EnTubeDataset(Dataset):
             file_names = os.listdir(folder_path)
             for file_name in file_names:
                 file_path = os.path.join(folder_path, file_name)
-                self.file_paths.append((file_path, file_name))      
+                
+                # temporarily filter out long videos to handle OOM issues
+                vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
+                duration = len(vr) / vr.get_avg_fps()
+                if duration >= 3124:
+                    self.file_paths.append((file_path, file_name))      
 
     def __len__(self):
         return len(self.file_paths)

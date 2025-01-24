@@ -1,7 +1,7 @@
+import torch
 from vision_encoders.builder import build_vision_tower_aux_list
 from transformers import Qwen2Config
 from typing import Optional, List, Tuple
-import torch
 import json
 from transformers import BaseImageProcessor
 import time
