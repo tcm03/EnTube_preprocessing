@@ -1,11 +1,12 @@
+import torch
 import numpy as np
 from PIL import Image
-import torch
-from decord import cpu, VideoReader
 from transformers import BaseImageProcessor
 from typing import List, Union, Tuple
-import time
+import logging
 from constants import *
+
+from decord import cpu, VideoReader
 
 def expand2square(pil_img, background_color):
     width, height = pil_img.size
@@ -84,7 +85,8 @@ def process_video_frames(
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     fps = float(vr.get_avg_fps())
     frame_indices = np.array([i for i in range(0, len(vr), round(fps),)])
-    print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
+    # print(f'@tcm: In process_video_frames(): # frames = {len(frame_indices)}')
+    logging.info(f'# frames = {len(frame_indices)}')
     image_sizes = [vr[0].shape[:2]]
 
     video = [[] for _ in range(len(image_processors))]
@@ -107,16 +109,5 @@ def process_video_frames(
 
     for i in range(len(video)):
         video[i] = torch.cat(video[i], dim=0)
-    
-    # vectorize_time = time.time()
-    # for frame_index in frame_indices:
-    #     img = vr[frame_index].asnumpy()
-    #     video.append(img)
-    # video = np.stack(video) # shape: (num_frames, height, width, channels)
-    # print(f'@tcm: In process_video_frames(): vectorize_time={time.time()-vectorize_time:4f}')
-    # image_sizes = [video[0].shape[:2]]
-    # process_time = time.time()
-    # video = process_images(video, image_processors)
-    # print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
-    # video = [item.unsqueeze(0) for item in video] # data collator class/ func will take care of batching
+
     return video, image_sizes

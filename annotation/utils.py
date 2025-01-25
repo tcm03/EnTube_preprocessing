@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path.cwd() / "annotation"))
 
-# import decord
+import decord
 from datatypes import Metadata
 from typing import List
 import os
@@ -24,9 +24,8 @@ def extract_label(path: str) -> str:
 
 def get_duration(path: str) -> int:
     try:
-        # vr = decord.VideoReader(path, ctx=de.cpu(0), num_threads=1)
-        # return int(len(vr) / vr.get_avg_fps())
-        return 100
+        vr = decord.VideoReader(path, ctx=decord.cpu(0), num_threads=1)
+        return int(len(vr) / vr.get_avg_fps())
     except Exception as e:
         print(f"Error reading video {path}: {e}")
         print(traceback.format_exc())  # Include the full traceback for debugging
@@ -35,13 +34,22 @@ def get_duration(path: str) -> int:
 def filter_video(path: str, **kwargs) -> bool:
     try:
         max_duration = kwargs.get('max_duration', None)
+        min_duration = kwargs.get('min_duration', None)
+        satisfy_max_duration = False
         if max_duration is not None:
             duration = get_duration(path)
             if duration == -1:  # Handle invalid duration
                 print(f"Skipping invalid video: {path}")
                 return False
-            return duration <= max_duration
-        return True
+            satisfy_max_duration = duration <= max_duration
+        else:
+            satisfy_max_duration = True
+        if min_duration is not None:
+            duration = get_duration(path)
+            satisfy_min_duration = duration >= min_duration
+        else:
+            satisfy_min_duration = True
+        return satisfy_max_duration and satisfy_min_duration
     except Exception as e:
         print(f"Error in filter_video for {path}: {e}")
         return False

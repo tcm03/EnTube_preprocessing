@@ -51,6 +51,11 @@ if __name__ == "__main__":
         help='Maximum duration of video in seconds'
     )
     parser.add_argument(
+        '--min_duration', 
+        type=int, 
+        help='Minimum duration of video in seconds'
+    )
+    parser.add_argument(
         '--random_state',
         type=int,
         default=42,
