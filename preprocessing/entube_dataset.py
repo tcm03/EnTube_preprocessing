@@ -5,7 +5,7 @@ import os
 from mm_datautils import process_video_frames
 from transformers import BaseImageProcessor
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+from resource_logging import measure_resource_usage, MeasureResourceUsage
 import decord
 
 class EnTubeDataset(Dataset):
@@ -18,16 +18,17 @@ class EnTubeDataset(Dataset):
         self.file_paths = []
         self.image_processors = image_processors
 
-        for folder_path in folder_paths:
-            file_names = os.listdir(folder_path)
-            for file_name in file_names:
-                file_path = os.path.join(folder_path, file_name)
-                
-                # temporarily filter out long videos to handle OOM issues
-                vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
-                duration = len(vr) / vr.get_avg_fps()
-                if duration >= 3124:
-                    self.file_paths.append((file_path, file_name))      
+        with MeasureResourceUsage():
+            for folder_path in folder_paths:
+                file_names = os.listdir(folder_path)
+                for file_name in file_names:
+                    file_path = os.path.join(folder_path, file_name)
+                    
+                    # temporarily filter out long videos to handle OOM issues
+                    vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
+                    duration = len(vr) / vr.get_avg_fps()
+                    if duration >= 3124:
+                        self.file_paths.append((file_path, file_name))      
 
     def __len__(self):
         return len(self.file_paths)
