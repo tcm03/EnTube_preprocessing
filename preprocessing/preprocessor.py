@@ -218,6 +218,7 @@ class CambrianEncoders:
         image_sizes: List[Tuple[int, int]],
     ):
         with MeasureResourceUsage():
+            # this block adds ~ 7.5 GB VRAM
             image_aux_list = images
             split_sizes_ori = [
                 1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
@@ -243,7 +244,7 @@ class CambrianEncoders:
                 concat_image_aux = torch.cat([image for image in image_aux], dim=0)
                 new_image_aux_list.append(concat_image_aux)
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting DINOv2 features...')
-        # dinov2_start_time = time.time()
+        # This encode_images() invocation adds ~ 7.6 GB VRAM
         image_aux_features_dino = self.encode_images(
             new_image_aux_list, encode_type="dino"
         )

@@ -28,7 +28,7 @@ class EnTubeDataset(Dataset):
                     # temporarily filter out long videos to handle OOM issues
                     vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
                     duration = len(vr) / vr.get_avg_fps()
-                    if duration >= 3124:
+                    if duration <= 3600:
                         self.file_paths.append((file_path, file_name))      
 
     def __len__(self):
