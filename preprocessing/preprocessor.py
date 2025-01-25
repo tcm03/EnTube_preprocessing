@@ -4,7 +4,7 @@ from transformers import Qwen2Config
 from typing import Optional, List, Tuple
 import json
 from transformers import BaseImageProcessor
-import time
+from resource_logging import measure_resource_usage, MeasureResourceUsage
 
 class CambrianConfig(Qwen2Config):
     model_type = "cambrian_qwen"
@@ -36,6 +36,7 @@ class CambrianEncoders:
         self.config: CambrianConfig = config
         self.vision_tower_aux_list = build_vision_tower_aux_list(config, delay_load=True)
 
+    @measure_resource_usage()
     def encode_images(self, image_aux_list, encode_type=None):
         vision_tower_aux_list = self.vision_tower_aux_list
         image_aux_features_list = []
@@ -92,6 +93,7 @@ class CambrianEncoders:
                 image_aux_features_list.append(image_aux_features)
             return image_aux_features_list
 
+    @measure_resource_usage()
     def select_frame(
             self,
             feature_list,
@@ -209,6 +211,7 @@ class CambrianEncoders:
             selected_frame_indices_all,
         )
 
+    @measure_resource_usage()
     def prepare_mm_features(
         self,
         images: List[torch.Tensor],
