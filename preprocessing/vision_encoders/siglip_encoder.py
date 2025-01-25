@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-
+import logging
 from transformers import SiglipImageProcessor, SiglipVisionConfig, SiglipVisionModel
 
 from .base_encoder import BaseVisionTower, ProcessorWrapper
@@ -39,7 +39,7 @@ class SiglipVisionTower(BaseVisionTower):
 
         self.vision_tower.requires_grad_(self.unfreeze_mm_vision_tower)
         self.is_loaded = True
-        print(f'@tcm: In SiglipVisionTower.load_model(): SiglipVisionModel loaded')
+        logging.info(f'SiglipVisionModel loaded')
 
     def interpolate(self, image_features):
         if self._interp_size is None:

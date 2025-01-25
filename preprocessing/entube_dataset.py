@@ -16,13 +16,11 @@ class EnTubeDataset(Dataset):
         folder_paths: List[str],
         image_processors: List[BaseImageProcessor],
     ) -> None:
-        logging.info(f'In EnTubeDataset.__init__()')
         self.file_paths = []
         self.image_processors = image_processors
 
         with MeasureResourceUsage():
             for folder_path in folder_paths:
-                logging.info(f'folder_path: {folder_path}')
                 file_names = os.listdir(folder_path)
                 for file_name in file_names:
                     file_path = os.path.join(folder_path, file_name)
@@ -37,17 +35,17 @@ class EnTubeDataset(Dataset):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        print(f'@tcm: In EnTubeDataset.__getitem__(): idx={idx}')
+        logging.info(f'Loading sample idx={idx}')
         video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
         return video, image_size, self.file_paths[idx][1]
 
+@measure_resource_usage()
 def collate_fn(batch):
     """
     batch: list of samples from EnTubeDataset.__getitem__()
     """
     assert isinstance(batch, list)
     assert isinstance(batch[0], tuple)
-    print(f'@tcm: collate_fn')
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     image_sizes = batch[0][1]
     batch_videos = [video for video, _, _ in batch] # ignore image_size and file_name

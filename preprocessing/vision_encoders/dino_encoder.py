@@ -4,8 +4,7 @@ import torch.nn.functional as F
 from transformers import AutoImageProcessor, Dinov2Config, Dinov2Model
 
 from .base_encoder import BaseVisionTower, ProcessorWrapper
-
-import time
+import logging
 
 
 class DinoVisionTower(BaseVisionTower):
@@ -58,7 +57,7 @@ class DinoVisionTower(BaseVisionTower):
 
         self.vision_tower.requires_grad_(self.unfreeze_mm_vision_tower)
         self.is_loaded = True
-        print(f'@tcm: In DinoVisionTower.load_model(): Dinov2Model loaded')
+        logging.info(f'DinoVisionTower loaded')
 
     @property
     def image_size(self):
