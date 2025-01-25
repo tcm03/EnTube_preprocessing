@@ -6,6 +6,7 @@ from mm_datautils import process_video_frames
 from transformers import BaseImageProcessor
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from resource_logging import measure_resource_usage, MeasureResourceUsage
+import logging
 import decord
 
 class EnTubeDataset(Dataset):
@@ -20,6 +21,7 @@ class EnTubeDataset(Dataset):
 
         with MeasureResourceUsage():
             for folder_path in folder_paths:
+                logging.info(f'folder_path: {folder_path}')
                 file_names = os.listdir(folder_path)
                 for file_name in file_names:
                     file_path = os.path.join(folder_path, file_name)
