@@ -27,7 +27,7 @@ def measure_resource_usage(device=torch.device("cuda:0")):
 
             # Log memory and time usage with caller info
             logging.info(
-                f"File: {caller_filename}, Line: {caller_lineno}\n"
+                f"\nFile: {caller_filename}, Line: {caller_lineno}\n"
                 f"Allocated before: {start_allocated/1e6:.2f} MB\n"
                 f"Allocated after:  {end_allocated/1e6:.2f} MB\n"
                 f"Net allocated change:  {(end_allocated - start_allocated)/1e6:.2f} MB\n"
@@ -66,7 +66,7 @@ class MeasureResourceUsage:
 
         # Log memory and time usage with caller info
         logging.info(
-            f"File: {caller_filename}, Line: {caller_lineno}\n"
+            f"\nFile: {caller_filename}, Line: {caller_lineno}\n"
             f"Allocated before block: {self.start_allocated/1e6:.2f} MB\n"
             f"Allocated after block:  {end_allocated/1e6:.2f} MB\n"
             f"Net allocated change:  {(end_allocated - self.start_allocated)/1e6:.2f} MB\n"
