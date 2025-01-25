@@ -3,7 +3,7 @@ import time
 import torch
 import inspect
 
-def measure_cuda_usage(device=torch.device("cuda:0")):
+def measure_resource_usage(device=torch.device("cuda:0")):
     def decorator(func):
         def wrapper(*args, **kwargs):
             # Measure start time and memory
@@ -42,7 +42,7 @@ def measure_cuda_usage(device=torch.device("cuda:0")):
         return wrapper
     return decorator
 
-class MeasureCudaUsage:
+class MeasureResourceUsage:
     def __init__(self, device=torch.device("cuda:0")):
         self.device = device
 
