@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from transformers import BaseImageProcessor
 from typing import List, Union, Tuple
+from resource_logging import measure_resource_usage, MeasureResourceUsage
 import logging
 from constants import *
 
@@ -78,6 +79,7 @@ def process_images(
             new_images = torch.stack(new_images, dim=0)
         return new_images
 
+@measure_resource_usage()
 def process_video_frames(
     video_path: str,
     image_processors: List[BaseImageProcessor],
