@@ -1,25 +1,26 @@
-from datasets import load_dataset
-import decord
+import inspect
 
-# Load the dataset in streaming mode
-dataset = load_dataset("tcm03/EnTube", split="train", streaming=True)
+def example_function():
+    # Get the current call stack
+    stack = inspect.stack()
+    print(f'stack: {stack}')
+    print(f'type(stack[0]): {type(stack[0])}')
+    # The caller is one frame above the current function
+    caller_frame = stack[1]
+    
+    # Extract details about the caller
+    caller_filename = caller_frame.filename  # File where the caller resides
+    caller_lineno = caller_frame.lineno      # Line number in the caller file
+    caller_function = caller_frame.function  # Function name of the caller
+    
+    # Print the details
+    print(f"Caller File: {caller_filename}")
+    print(f"Caller Line Number: {caller_lineno}")
+    print(f"Caller Function: {caller_function}")
 
-# Initialize counter and specify the max videos to process
-max_videos = 5
-video_count = 0
+def caller_function():
+    # Call the example function
+    example_function()
 
-# Stream and process videos
-for item in dataset:
-    video_reader = item['video']  # Decord VideoReader object
-    label = item['label']         # Label for the video
-
-    # Extract frames from the video
-    frames = []
-    for frame in video_reader:
-        frames.append(frame.asnumpy())  # Convert Decord frames to NumPy arrays
-
-    print(f"Processed video {video_count} with label {label}, extracted {len(frames)} frames")
-
-    video_count += 1
-    if video_count >= max_videos:
-        break
+if __name__ == "__main__":
+    caller_function()

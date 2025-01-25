@@ -76,7 +76,7 @@ if __name__ == "__main__":
         )
 
     for batch_idx, (videos, image_sizes, file_names) in enumerate(dataloader):
-        print(f"Processing batch {batch_idx + 1}/{len(dataloader)}")
+        logging.info(f'Processing batch {batch_idx + 1}/{len(dataloader)}')
         assert isinstance(videos, list), "List of videos features for each processor (vision encoder)"
         assert isinstance(videos[0], list) or isinstance(videos[0], torch.Tensor), "List of videos in the batch"
         # tensor(num_reduced_frames, len=576, hidden_dim=1152/1536) image_aux_features_list[num_processors]
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         tensor_dino = image_aux_features_list[1].to('cpu')
         # file_name = file_names[0] # the batch has only one file
         for file_name in file_names:
-            print(f'file_name={file_name}')
+            logging.info(f'file_name={file_name}')
             file_id = extract_fileid(file_name)
             save_tensor = {
                 file_id + '-siglip': tensor_siglip,
