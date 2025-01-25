@@ -11,7 +11,7 @@ def get_project_py_files():
     project_py_files = set()
     for root, _, files in os.walk(current_dir):
         for file in files:
-            if file.endswith(".py"):  # Collect all .py files
+            if "resource_logging" not in file and file.endswith(".py"):  # Collect all .py files except resource_logging.py
                 project_py_files.add(Path(root) / file)
     return project_py_files
 
