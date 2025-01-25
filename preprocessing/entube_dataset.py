@@ -16,6 +16,7 @@ class EnTubeDataset(Dataset):
         folder_paths: List[str],
         image_processors: List[BaseImageProcessor],
     ) -> None:
+        logging.info(f'In EnTubeDataset.__init__()')
         self.file_paths = []
         self.image_processors = image_processors
 
