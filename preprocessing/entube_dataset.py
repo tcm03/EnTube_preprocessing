@@ -35,7 +35,7 @@ class EnTubeDataset(Dataset):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        logging.info(f'Loading sample {self.file_paths[idx][1]}')
+        logging.info(f'Loading sample {self.file_paths[idx][1]}: {os.path.getsize(self.file_paths[idx][0]) / (1024**2):.2f} MB')
         video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
         return video, image_size, self.file_paths[idx][1]
 

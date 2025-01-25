@@ -94,4 +94,20 @@ if __name__ == "__main__":
                 file_id + '-siglip': tensor_siglip,
                 file_id + '-dino': tensor_dino
             }
-            save_file(save_tensor, os.path.join(SAFETENSORS_PATH, file_id + '.safetensors'))
+            safetensors_file_path = os.path.join(SAFETENSORS_PATH, file_id + '.safetensors')
+            save_file(save_tensor, safetensors_file_path)
+            
+            # Get the file size
+            try:
+                file_size = os.path.getsize(safetensors_file_path)
+                logging.info(f"Safetensors file '{safetensors_file_path}' size: {file_size / (1024 * 1024):.2f} MB")
+            except FileNotFoundError:
+                logging.warning(f"Safetensors file '{safetensors_file_path}' not found after saving.")
+                continue
+
+            # Delete the file after evaluating its size
+            try:
+                os.remove(safetensors_file_path)
+                logging.info(f"Safetensors file '{safetensors_file_path}' deleted successfully.")
+            except OSError as e:
+                logging.error(f"Error deleting file '{safetensors_file_path}': {e}")
