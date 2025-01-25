@@ -217,30 +217,31 @@ class CambrianEncoders:
         images: List[torch.Tensor],
         image_sizes: List[Tuple[int, int]],
     ):
-        image_aux_list = images
-        split_sizes_ori = [
-            1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
-        ]
-        new_image_aux_list = []
-        for image_aux in image_aux_list:
-            if type(image_aux) is list:
-                # image_aux = [
-                #     x.unsqueeze(0) if x.ndim == 3 else x for x in image_aux
-                # ]
-                tmp_image_aux = []
-                for x in image_aux:
-                    assert x.ndim == 3 or x.ndim == 4, 'Only allow video tensor to have 3 or 4 dimensions'
-                    # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): x.shape={x.shape}')
-                    if x.ndim == 3:
-                        # add num_frames dimension
-                        x = x.unsqueeze(0)
-                    # if x.shape[0] == 1:
-                    #     x = x.squeeze(0)
-                    tmp_image_aux.append(x)
-                image_aux = tmp_image_aux
-                
-            concat_image_aux = torch.cat([image for image in image_aux], dim=0)
-            new_image_aux_list.append(concat_image_aux)
+        with MeasureResourceUsage():
+            image_aux_list = images
+            split_sizes_ori = [
+                1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
+            ]
+            new_image_aux_list = []
+            for image_aux in image_aux_list:
+                if type(image_aux) is list:
+                    # image_aux = [
+                    #     x.unsqueeze(0) if x.ndim == 3 else x for x in image_aux
+                    # ]
+                    tmp_image_aux = []
+                    for x in image_aux:
+                        assert x.ndim == 3 or x.ndim == 4, 'Only allow video tensor to have 3 or 4 dimensions'
+                        # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): x.shape={x.shape}')
+                        if x.ndim == 3:
+                            # add num_frames dimension
+                            x = x.unsqueeze(0)
+                        # if x.shape[0] == 1:
+                        #     x = x.squeeze(0)
+                        tmp_image_aux.append(x)
+                    image_aux = tmp_image_aux
+                    
+                concat_image_aux = torch.cat([image for image in image_aux], dim=0)
+                new_image_aux_list.append(concat_image_aux)
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting DINOv2 features...')
         # dinov2_start_time = time.time()
         image_aux_features_dino = self.encode_images(
