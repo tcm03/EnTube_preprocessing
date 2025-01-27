@@ -8,7 +8,7 @@ import os
 from typing import List, Union, Dict, Any, Callable, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datatypes import VideoAnnotation, Metadata
-from utils import get_optimal_workers, extract_label, convert_to_linux_path
+from utils import get_optimal_workers, extract_label, convert_to_linux_path, shorten_file_path
 
 
 def annotate_video(
@@ -21,7 +21,7 @@ def annotate_video(
         return None
     # print(f'Begin annotating {file_path}...')
     json_content: VideoAnnotation = {
-        'video': convert_to_linux_path(file_path),
+        'video': convert_to_linux_path(shorten_file_path(file_path)),
         'label': label,
         'conversations': [
             {

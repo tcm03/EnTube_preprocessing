@@ -74,3 +74,11 @@ def get_metadata(
                 metadata.append((file_path, label))
     print(f'Found {len(metadata)} videos')
     return metadata
+
+def shorten_file_path(path: str) -> str:
+    dirs = path.split('/')
+    # loop dirs in reverse
+    for i in range(len(dirs) - 1, -1, -1):
+        if dirs[i].isnumeric():
+            return '/'.join(dirs[i:])
+    return path
