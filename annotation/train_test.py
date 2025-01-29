@@ -21,11 +21,10 @@ if __name__ == "__main__":
         description='Annotate video dataset with JSON format'
     )
     parser.add_argument(
-        '--folders',
+        '--data',
         type = str,
-        nargs = '+',
         required = True,
-        help = "List of folder paths to video data"
+        help = "Path to video data"
     )
     parser.add_argument(
         '--train_size', 
@@ -63,8 +62,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    folder_paths: List[str] = args.folders
-    metadata: Metadata = get_metadata(folder_paths)
+    data_path = args.data
+    metadata: Metadata = get_metadata(data_path)
     # split metadata into 3 submetadata corresponding to 3 labels
     metadata_label = {0: [], 1: [], 2: []}
     for video, label in metadata:

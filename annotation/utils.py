@@ -9,6 +9,7 @@ from typing import List
 import os
 from multiprocessing import cpu_count
 import traceback
+from typing import Union
 
 
 def convert_to_linux_path(path: str) -> str:
@@ -62,10 +63,12 @@ def get_optimal_workers() -> int:
         return 1  # Fallback to a single worker in case of an error
 
 def get_metadata(
-    folder_paths: List[str]
+    data_path: Union[str, Path]
 ) -> Metadata:
     metadata: Metadata = []
+    folder_paths = os.listdir(data_path)
     for folder_path in folder_paths:
+        folder_path = os.path.join(data_path, folder_path)
         label: str = extract_label(folder_path)
         assert label != '-1', f"Invalid folder path: {folder_path}"
         for file_name in os.listdir(folder_path):
