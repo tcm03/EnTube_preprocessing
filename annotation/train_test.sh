@@ -1,6 +1,10 @@
+DATA_PATH="/media02/nthuy/data/entube/EnTube/data"
+OUTPUT_TRAIN_PATH="data_short/EnTube_30m_train_short.json"
+OUTPUT_TEST_PATH="data_short/EnTube_30m_test_short.json"
+
 python annotation/train_test.py \
---data /media02/nthuy/data/entube/EnTube/data \
---output_train_file data_short/EnTube_20m_train.json \
---output_test_file data_short/EnTube_20m_test.json \
---min_duration 20 \
---max_duration 1200
+--data $DATA_PATH \
+--output_train_file $OUTPUT_TRAIN_PATH \
+--output_test_file $OUTPUT_TEST_PATH \
+--min_duration 1 \
+--max_duration 1800
