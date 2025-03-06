@@ -8,7 +8,7 @@ import os
 from typing import List, Union, Dict, Any, Callable, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datatypes import VideoAnnotation, Metadata
-from utils import get_optimal_workers, extract_label, convert_to_linux_path, shorten_file_path
+from utils import *
 
 
 def annotate_video(
@@ -26,11 +26,11 @@ def annotate_video(
         'conversations': [
             {
                 'from': 'human',    
-                'value': '<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only.'
+                'value': '<image>\n' + get_input_prompt()
             },
             {
                 'from': 'gpt',
-                'value': f'The engagement label of the video is {label}.'
+                'value': get_output_prompt(label)
             }
         ]
     }

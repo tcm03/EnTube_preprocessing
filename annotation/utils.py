@@ -85,3 +85,17 @@ def shorten_file_path(path: str) -> str:
         if dirs[i].isnumeric():
             return '/'.join(dirs[i:])
     return path
+
+def get_input_prompt() -> str:
+    return "This video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+
+def get_output_prompt(label: Union[int, str]) -> str:
+    # return f'The engagement label of the video is {str(label)}.'
+    if str(label) == '0':
+        return '0 (not engaged)'
+    elif str(label) == '1':
+        return '1 (neutral)'
+    elif str(label) == '2':
+        return '2 (engaged)'
+    else:
+        assert False, "Invalid label"
