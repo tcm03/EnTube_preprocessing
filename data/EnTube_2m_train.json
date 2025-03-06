@@ -1,0 +1,212 @@
+[
+    {
+        "video": "2/rzpvOGSHPBc.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "0/ttG3b07WFro.mp4",
+        "label": "0",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 0."
+            }
+        ]
+    },
+    {
+        "video": "2/zKrpAMbtUYs.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/ZPDCZBJ0Bkg.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/qbFqhOwziow.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/Y6EbzWjqDkI.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/DrUGGcuzn3g.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/Ojzxh-Kuxwk.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/aGzAPUbViyg.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/uBF69nSq3Fg.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/4M0RS4AW8U4.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/QfduvtQXVMQ.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/jE8D3AoAyCs.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/bciU4Sxtfa8.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    },
+    {
+        "video": "2/cWePKxFrPY0.mp4",
+        "label": "2",
+        "conversations": [
+            {
+                "from": "human",
+                "value": "<image>\nThis video is a Youtube video on one of many categories such as Education, Film & Animation, Comedy, Entertainment, Music, Howto & Style, and People & Blogs, etc. The engagement rate defined for each such video is based on the number of potential likes and dislikes only when published on Youtube. The higher number of likes and lower number of dislikes, the more engaged the video is. The final prediction label is either 0 (not engaged), 1 (neutral), or 2 (engaged). Please predict one of the three labels for this video, based on its contents only."
+            },
+            {
+                "from": "gpt",
+                "value": "The engagement label of the video is 2."
+            }
+        ]
+    }
+]
