@@ -83,6 +83,8 @@ if __name__ == "__main__":
     json_train: List[VideoAnnotation] = dump_json(train, filter_video, **vars(args))
     json_test: List[VideoAnnotation] = dump_json(test, filter_video, **vars(args))
 
+    os.makedirs(os.path.dirname(args.output_train_file), exist_ok=True)
+    os.makedirs(os.path.dirname(args.output_test_file), exist_ok=True)
     with open(args.output_train_file, 'w') as f:
         json.dump(json_train, f, indent=4)
     print(f"Training data saved to {args.output_train_file}")

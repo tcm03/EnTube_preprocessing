@@ -1,26 +1,16 @@
-import inspect
-
-def example_function():
-    # Get the current call stack
-    stack = inspect.stack()
-    print(f'stack: {stack}')
-    print(f'type(stack[0]): {type(stack[0])}')
-    # The caller is one frame above the current function
-    caller_frame = stack[1]
-    
-    # Extract details about the caller
-    caller_filename = caller_frame.filename  # File where the caller resides
-    caller_lineno = caller_frame.lineno      # Line number in the caller file
-    caller_function = caller_frame.function  # Function name of the caller
-    
-    # Print the details
-    print(f"Caller File: {caller_filename}")
-    print(f"Caller Line Number: {caller_lineno}")
-    print(f"Caller Function: {caller_function}")
-
-def caller_function():
-    # Call the example function
-    example_function()
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+import json
 
 if __name__ == "__main__":
-    caller_function()
+    golds = []
+    preds = []
+    with open("data/EnTube_1h_test.json", "r") as f:
+        data = json.load(f)
+        for item in data:
+            label = int(item["label"])
+            preds.append(2)
+            golds.append(label)
+    print(accuracy_score(golds, preds))
+    print(precision_recall_fscore_support(golds, preds, average='macro'))
+    print(precision_recall_fscore_support(golds, preds, average='micro'))
+    print(precision_recall_fscore_support(golds, preds, average='weighted'))

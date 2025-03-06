@@ -1,3 +1,4 @@
+scikit-learn
 numpy==1.26.4
 datasets
 decord
@@ -7,4 +8,3 @@ transformers==4.42.4
 safetensors
 pillow
 huggingface_hub
-scikit-learn
