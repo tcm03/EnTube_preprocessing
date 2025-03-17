@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from vision_encoders.builder import build_vision_tower_aux_list
-from .vision_sampler import VisionTokenSampler
+from vision_sampler import VisionTokenSampler
 from transformers import Qwen2Config
 from typing import Optional, List, Tuple
 import json
@@ -95,6 +95,7 @@ class CambrianEncoders:
         self, 
         config: CambrianConfig
     ) -> None:
+        self.dtype = torch.float32
         self.config: CambrianConfig = config
 
         vision_hidden_size = config.vision_hidden_size # 1024
@@ -481,7 +482,7 @@ class CambrianEncoders:
 
     def prepare_mm_features(
         self,
-        input_ids,
+        # input_ids,
         images: List[torch.Tensor],
         image_sizes: List[Tuple[int, int]],
     ):
@@ -618,12 +619,14 @@ class CambrianEncoders:
 
                 if split_sizes is not None:
                     try:
-                        if "llama" in self.config.model_type:
-                            text_len = torch.where(input_ids[0] == 128002)[-1][0]
-                        else:
-                            text_len = torch.where(input_ids[0] == 151643)[-1][0]
+#                        if "llama" in self.config.model_type:
+#                            text_len = torch.where(input_ids[0] == 128002)[-1][0]
+#                        else:
+#                            text_len = torch.where(input_ids[0] == 151643)[-1][0]
+                        text_len = 0
                     except:
-                        text_len = len(input_ids[0])
+                        # text_len = len(input_ids[0])
+                        text_len = 0
                     max_visual_len = (
                         self.config.tokenizer_model_max_length
                         - text_len

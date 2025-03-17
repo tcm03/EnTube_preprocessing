@@ -1,3 +1,6 @@
-python main.py \
+DATA_PATH="/raid/nthuy/SnapUGC/train /raid/nthuy/SnapUGC/test"
+
+python preprocessing/main.py \
 --data $DATA_PATH \
---config_file "config_llama.json" \
+--output_file "test.safetensors" \
+--config_file "preprocessing/config_llama.json" \
