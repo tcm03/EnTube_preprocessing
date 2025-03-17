@@ -92,7 +92,7 @@ if __name__ == "__main__":
         collate_fn=collate_fn,
     )
 
-    processor.eval()
+    model_module.eval()
 
     with torch.no_grad():
         for batch_idx, (videos, image_sizes, file_names) in enumerate(dataloader):
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             assert isinstance(videos[0], list) or isinstance(videos[0], torch.Tensor), "List of videos in the batch"
             # tensor(num_reduced_frames, len=576, hidden_dim=1152/1536) image_aux_features_list[num_processors]
 
-            image_aux_features_list = processor.prepare_mm_features(videos, image_sizes)
+            image_aux_features_list = model_module.prepare_mm_features(videos, image_sizes)
 
             # tensor_siglip = image_aux_features_list[0].to('cpu')
             # tensor_dino = image_aux_features_list[1].to('cpu')
