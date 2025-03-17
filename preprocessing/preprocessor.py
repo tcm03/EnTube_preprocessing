@@ -1,10 +1,72 @@
 import torch
+import torch.nn as nn
 from vision_encoders.builder import build_vision_tower_aux_list
+from .vision_sampler import VisionTokenSampler
 from transformers import Qwen2Config
 from typing import Optional, List, Tuple
 import json
+import math
 from transformers import BaseImageProcessor
 from resource_logging import measure_resource_usage, MeasureResourceUsage
+import torch.nn.functional as F
+
+def unmask_attention_mask(mask, original_size):
+    original_w, original_h = original_size
+    cur_h, cur_w = mask.shape[1:3]
+
+    original_aspect_ratio = original_w / original_h
+    current_aspect_ratio = cur_w / cur_h
+
+    if original_aspect_ratio > current_aspect_ratio:
+        scale_factor = cur_w / original_w
+        new_height = int(original_h * scale_factor)
+        padding = (cur_h - new_height) // 2
+        if padding > 0:
+            mask[:, :padding, :] = 0
+            mask[:, -padding:, :] = 0
+        return mask
+    else:
+        scale_factor = cur_h / original_h
+        new_width = int(original_w * scale_factor)
+        padding = (cur_w - new_width) // 2
+        if padding > 0:
+            mask[:, :, :padding] = 0
+            mask[:, :, -padding:] = 0
+        return mask
+
+def unpad_image(tensor, original_size):
+    """
+    Unpads a PyTorch tensor of a padded and resized image.
+
+    Args:
+    tensor (torch.Tensor): The image tensor, assumed to be in CxHxW format.
+    original_size (tuple): The original size of the image (height, width).
+
+    Returns:
+    torch.Tensor: The unpadded image tensor.
+    """
+    original_width, original_height = original_size
+    current_height, current_width = tensor.shape[1:3]
+
+    original_aspect_ratio = original_width / original_height
+    current_aspect_ratio = current_width / current_height
+
+    if original_aspect_ratio > current_aspect_ratio:
+        scale_factor = current_width / original_width
+        new_height = int(original_height * scale_factor)
+        padding = (current_height - new_height) // 2
+        unpadded_tensor = tensor[:, padding : current_height - padding, :]
+        # if 0 in unpadded_tensor.shape:
+        #     print(f"scale_factor: {scale_factor}, new_height: {new_height}, padding: {padding}, original_width: {original_width}, original_height: {original_height}")
+    else:
+        scale_factor = current_height / original_height
+        new_width = int(original_width * scale_factor)
+        padding = (current_width - new_width) // 2
+        unpadded_tensor = tensor[:, :, padding : current_width - padding]
+        # if 0 in unpadded_tensor.shape:
+        #     print(f"scale_factor: {scale_factor}, new_width: {new_width}, padding: {padding}, original_width: {original_width}, original_height: {original_height}")
+
+    return unpadded_tensor
 
 class CambrianConfig(Qwen2Config):
     model_type = "cambrian_qwen"
@@ -34,9 +96,215 @@ class CambrianEncoders:
         config: CambrianConfig
     ) -> None:
         self.config: CambrianConfig = config
-        self.vision_tower_aux_list = build_vision_tower_aux_list(config, delay_load=True)
 
-    @measure_resource_usage()
+        vision_hidden_size = config.vision_hidden_size # 1024
+        num_query_group = config.num_query_group # 1
+        query_num_list = config.query_num_list # [144]
+        connector_only = config.connector_only # true
+        connector_depth = config.connector_depth # 3
+        self.vision_tower_aux_list = nn.ModuleList(build_vision_tower_aux_list(
+            config, delay_load=True
+        ))
+        self.mm_projector = nn.Sequential(
+            nn.Linear(vision_hidden_size * num_query_group, config.hidden_size), # 3584
+            nn.GELU(),
+            nn.Linear(config.hidden_size, config.hidden_size), # 3584
+        )
+
+        image_token_len = config.image_token_len # 144
+        vision_tower_aux_token_len_list = (
+            self.config.mm_vision_tower_aux_token_len_list
+        ) # (576, 576)
+        cross_att_token_len_list = [
+            int(vision_tower_aux_token_len**0.5) // int(image_token_len**0.5)
+            for vision_tower_aux_token_len in vision_tower_aux_token_len_list
+        ]
+
+        for aux_i, vision_tower_aux in enumerate(self.vision_tower_aux_list):
+            setattr(
+                self,
+                "mm_projector_aux_{}".format(aux_i),
+                nn.Sequential(
+                    nn.Linear(vision_tower_aux.hidden_size, vision_hidden_size),
+                    nn.GELU(),
+                    nn.Linear(vision_hidden_size, vision_hidden_size),
+                    nn.LayerNorm(vision_hidden_size),
+                ),
+            )
+            
+
+        for query_group_i in range(num_query_group):
+            cross_att_token_len_list = [
+                int(vision_tower_aux_token_len**0.5)
+                // int(query_num_list[query_group_i] ** 0.5)
+                for vision_tower_aux_token_len in vision_tower_aux_token_len_list
+            ]
+            setattr(
+                self,
+                "vision_sampler_{}".format(query_group_i),
+                VisionTokenSampler(
+                    vision_hidden_size,
+                    vision_hidden_size,
+                    [vision_hidden_size] * len(self.vision_tower_aux_list),
+                    cross_att_token_len_list,
+                    vision_hidden_size,
+                    connector_depth,
+                ),
+            )
+
+        if not connector_only:
+            num_of_vision_sampler_layers = (
+                config.num_of_vision_sampler_layers
+            ) = config.num_of_vision_sampler_layers
+            config.start_of_vision_sampler_layers = (
+                config.start_of_vision_sampler_layers
+            )
+            config.stride_of_vision_sampler_layers = (
+                config.stride_of_vision_sampler_layers
+            )
+            cross_att_token_len_list = [
+                int(vision_tower_aux_token_len**0.5)
+                // int(image_token_len**0.5)
+                for vision_tower_aux_token_len in vision_tower_aux_token_len_list
+            ]
+            self.vision_sampler_layers = nn.ModuleList(
+                [
+                    VisionTokenSampler(
+                        config.hidden_size,
+                        vision_hidden_size,
+                        [vision_hidden_size] * len(self.vision_tower_aux_list),
+                        cross_att_token_len_list,
+                        vision_hidden_size,
+                        1,
+                    )
+                    for layer_idx in range(0, num_of_vision_sampler_layers)
+                ]
+            )
+
+        self.vision_query = nn.Parameter(
+            torch.randn((num_query_group, vision_hidden_size), dtype=self.dtype)
+        )
+
+        self.image_newline = nn.Parameter(
+            torch.empty(config.hidden_size, dtype=self.dtype)
+        )
+
+        self.frame_pos = torch.stack(
+            [
+                1
+                / torch.pow(
+                    torch.tensor(10000),
+                    torch.tensor(2 * (hid_j // 2) / config.hidden_size),
+                )
+                for hid_j in range(config.hidden_size)
+            ]
+        )
+
+    def get_frame_pos(self, time_range):
+        frame_pos = self.frame_pos.reshape(1, -1) * time_range.reshape(-1, 1).to(
+            self.frame_pos.device
+        )
+        frame_pos[:, 0::2] = torch.sin(frame_pos[:, 0::2])
+        frame_pos[:, 1::2] = torch.cos(frame_pos[:, 0::2])
+        frame_pos = frame_pos.unsqueeze(1)
+        return frame_pos
+    
+    def rearrange_vision_tower_features_inference(
+        self, vision_tower_aux_feature_list, query_side_len, image_sizes, unpad=False
+    ):
+        vision_tower_aux_feature_rearranged_list = []
+        vision_tower_aux_attention_masks_rearranged_list = []
+        bs = vision_tower_aux_feature_list[0].shape[0]
+        for vision_tower_aux_feature in vision_tower_aux_feature_list:
+            aux_height = aux_width = int(vision_tower_aux_feature.shape[1] ** 0.5)
+            assert (aux_height // query_side_len) * query_side_len == aux_height
+
+            reduce_factor = aux_height // query_side_len
+
+            vision_tower_aux_feature_rearranged = []
+            vision_tower_aux_attention_masks_rearranged = []
+            for batch_i in range(bs):
+                image_size = image_sizes[batch_i]
+                cur_vision_tower_aux_feature = vision_tower_aux_feature[batch_i]
+
+                cur_vision_tower_aux_attention_masks_rearranged = torch.ones(
+                    (1, aux_height, aux_width),
+                    dtype=torch.bool,
+                    device=cur_vision_tower_aux_feature.device,
+                )
+                cur_vision_tower_aux_feature_rearranged = (
+                    cur_vision_tower_aux_feature.view(
+                        1,
+                        query_side_len,
+                        reduce_factor,
+                        query_side_len,
+                        reduce_factor,
+                        -1,
+                    )
+                )
+                cur_vision_tower_aux_feature_rearranged = (
+                    cur_vision_tower_aux_feature_rearranged.permute(
+                        0, 1, 3, 2, 4, 5
+                    ).contiguous()
+                )
+                if unpad:
+                    cur_vision_tower_aux_feature_rearranged = unpad_image(
+                        cur_vision_tower_aux_feature_rearranged, image_size
+                    )
+                cur_vision_tower_aux_feature_rearranged = (
+                    cur_vision_tower_aux_feature_rearranged.flatten(0, 2).flatten(1, 2)
+                )  # query_side_len*query_side_len X reduce_factor*reduce_factor X C
+
+                cur_vision_tower_aux_attention_masks_rearranged = unmask_attention_mask(
+                    cur_vision_tower_aux_attention_masks_rearranged, image_size
+                )
+                cur_vision_tower_aux_attention_masks_rearranged = (
+                    cur_vision_tower_aux_attention_masks_rearranged.view(
+                        1, query_side_len, reduce_factor, query_side_len, reduce_factor
+                    )
+                    .permute(0, 1, 3, 2, 4)
+                    .contiguous()
+                )
+                if unpad:
+                    cur_vision_tower_aux_attention_masks_rearranged = unpad_image(
+                        cur_vision_tower_aux_attention_masks_rearranged, image_size
+                    )
+                cur_vision_tower_aux_attention_masks_rearranged = (
+                    cur_vision_tower_aux_attention_masks_rearranged.flatten(
+                        0, 2
+                    ).flatten(1, 2)
+                )
+
+                cur_vision_tower_aux_attention_masks_rearranged[
+                    cur_vision_tower_aux_attention_masks_rearranged.sum(-1) == 0
+                ] = True
+
+                vision_tower_aux_feature_rearranged.append(
+                    cur_vision_tower_aux_feature_rearranged
+                )
+                vision_tower_aux_attention_masks_rearranged.append(
+                    cur_vision_tower_aux_attention_masks_rearranged
+                )
+
+            vision_tower_aux_feature_rearranged = torch.cat(
+                vision_tower_aux_feature_rearranged, 0
+            )
+            vision_tower_aux_attention_masks_rearranged = torch.cat(
+                vision_tower_aux_attention_masks_rearranged, 0
+            )
+
+            vision_tower_aux_feature_rearranged_list.append(
+                vision_tower_aux_feature_rearranged
+            )
+            vision_tower_aux_attention_masks_rearranged_list.append(
+                vision_tower_aux_attention_masks_rearranged
+            )
+
+        return (
+            vision_tower_aux_feature_rearranged_list,
+            vision_tower_aux_attention_masks_rearranged_list,
+        )
+    
     def encode_images(self, image_aux_list, encode_type=None):
         vision_tower_aux_list = self.vision_tower_aux_list
         image_aux_features_list = []
@@ -93,7 +361,6 @@ class CambrianEncoders:
                 image_aux_features_list.append(image_aux_features)
             return image_aux_features_list
 
-    @measure_resource_usage()
     def select_frame(
             self,
             feature_list,
@@ -210,39 +477,39 @@ class CambrianEncoders:
             [selected_frames_all_0, selected_frames_all_1],
             selected_frame_indices_all,
         )
+    
 
-    @measure_resource_usage()
     def prepare_mm_features(
         self,
+        input_ids,
         images: List[torch.Tensor],
         image_sizes: List[Tuple[int, int]],
     ):
-        with MeasureResourceUsage():
-            # this block adds ~ 7.5 GB VRAM
-            image_aux_list = images
-            split_sizes_ori = [
-                1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
-            ]
-            new_image_aux_list = []
-            for image_aux in image_aux_list:
-                if type(image_aux) is list:
-                    # image_aux = [
-                    #     x.unsqueeze(0) if x.ndim == 3 else x for x in image_aux
-                    # ]
-                    tmp_image_aux = []
-                    for x in image_aux:
-                        assert x.ndim == 3 or x.ndim == 4, 'Only allow video tensor to have 3 or 4 dimensions'
-                        # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): x.shape={x.shape}')
-                        if x.ndim == 3:
-                            # add num_frames dimension
-                            x = x.unsqueeze(0)
-                        # if x.shape[0] == 1:
-                        #     x = x.squeeze(0)
-                        tmp_image_aux.append(x)
-                    image_aux = tmp_image_aux
-                    
-                concat_image_aux = torch.cat([image for image in image_aux], dim=0)
-                new_image_aux_list.append(concat_image_aux)
+        vision_tower_aux_list = self.vision_tower_aux_list
+        image_aux_list = images
+        split_sizes_ori = [
+            1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
+        ]
+        new_image_aux_list = []
+        for image_aux in image_aux_list:
+            if type(image_aux) is list:
+                # image_aux = [
+                #     x.unsqueeze(0) if x.ndim == 3 else x for x in image_aux
+                # ]
+                tmp_image_aux = []
+                for x in image_aux:
+                    assert x.ndim == 3 or x.ndim == 4, 'Only allow video tensor to have 3 or 4 dimensions'
+                    # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): x.shape={x.shape}')
+                    if x.ndim == 3:
+                        # add num_frames dimension
+                        x = x.unsqueeze(0)
+                    # if x.shape[0] == 1:
+                    #     x = x.squeeze(0)
+                    tmp_image_aux.append(x)
+                image_aux = tmp_image_aux
+                
+            concat_image_aux = torch.cat([image for image in image_aux], dim=0)
+            new_image_aux_list.append(concat_image_aux)
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting DINOv2 features...')
         # This encode_images() invocation adds ~ 7.6 GB VRAM
         image_aux_features_dino = self.encode_images(
@@ -274,4 +541,416 @@ class CambrianEncoders:
             image_aux_features_siglip,
             image_aux_features_dino,
         ]
-        return image_aux_features_list
+        
+        bs = image_aux_features_list[0].shape[0]
+        dtype = new_image_aux_list[0].dtype
+
+        frame_sizes = []
+        for i in range(len(image_sizes)):
+            for j in range(split_sizes[i]):
+                frame_sizes.append(image_sizes[i])
+        image_sizes = frame_sizes # [(360, 640), ..., (360, 640)] (len = # frames)
+        
+        image_token_len = self.config.image_token_len
+        query_num_list = self.config.query_num_list
+
+        final_height = final_width = int(image_token_len**0.5)
+
+        final_image_features_list = []
+        final_image_features_down_list = []
+
+        # only needed for sva
+        vision_tower_aux_feature_list_final = None
+        vision_tower_aux_attention_masks_list_final = None
+        global_context_feature_final = None
+
+        if self.config.mm_projector_type == "sva":
+            vision_tower_aux_feature_list = []
+            vision_tower_aux_attention_masks_list = []
+            # get vision tokens from each vision tower
+            for aux_i in range(len(vision_tower_aux_list)):
+                image_aux_features = image_aux_features_list[aux_i]
+                # debug_tensor(f'image_aux_features_list[{aux_i}]', image_aux_features)
+                image_aux_features = getattr(
+                    self, "mm_projector_aux_{}".format(aux_i)
+                )(image_aux_features).to(dtype)
+                # [# frames, 576, 1152] -> [# frames, 576, 1024]
+                # [# frames, 576, 1536] -> [# frames, 576, 1024]
+                if aux_i == 0:
+                    # global_context_feature.shape: [10, 1, 1, 1024]
+                    global_context_feature = image_aux_features.mean(1).view(
+                        bs, 1, 1, -1
+                    )
+
+                vision_tower_aux_feature_list.append(image_aux_features)
+
+            
+            input_mix_res = True
+            input_high_res = True
+            # perform vision sampling for each query group
+            for query_group_i, query_num in enumerate(query_num_list):
+                query_features_i = (
+                    self
+                    .vision_query[query_group_i, :]
+                    .view(1, 1, 1, -1)
+                    .expand(bs, query_num, -1, -1)
+                )
+                global_context_feature_i = global_context_feature.expand(
+                    -1, query_num, 1, -1
+                ).flatten(0, 1)
+                query_side_len = int(query_num**0.5)
+                (
+                    vision_tower_aux_feature_list_i,
+                    vision_tower_aux_attention_masks_list_i,
+                ) = self.rearrange_vision_tower_features_inference(
+                    vision_tower_aux_feature_list, query_side_len, image_sizes
+                )
+
+                query_features_i = getattr(
+                    self, "vision_sampler_{}".format(query_group_i)
+                )(
+                    query_features_i.flatten(0, 1),
+                    global_context_feature_i,
+                    *vision_tower_aux_feature_list_i,
+                    *vision_tower_aux_attention_masks_list_i,
+                )
+                query_features_i = query_features_i.view(bs, query_num, -1)
+
+                if split_sizes is not None:
+                    try:
+                        if "llama" in self.config.model_type:
+                            text_len = torch.where(input_ids[0] == 128002)[-1][0]
+                        else:
+                            text_len = torch.where(input_ids[0] == 151643)[-1][0]
+                    except:
+                        text_len = len(input_ids[0])
+                    max_visual_len = (
+                        self.config.tokenizer_model_max_length
+                        - text_len
+                        - getattr(self.config, "inference_max_length", 16)
+                    )
+                    max_num_frames = max(
+                        1,
+                        math.floor(max_visual_len // (final_height * final_width)),
+                    )
+                    max_num_frames_low = max(
+                        1,
+                        math.floor(
+                            max_visual_len
+                            // (self.config.lowres_token ** 2)
+                        ),
+                    )
+                    if split_sizes[0] < max_num_frames:
+                        input_mix_res = False
+                    elif split_sizes[0] > max_num_frames_low:
+                        input_mix_res = False
+                        input_high_res = False
+
+                # input_mix_res = False  # ablation
+
+                if (getattr(self.config, "highres", False)) and input_mix_res:
+                    _query_features_i = (
+                        query_features_i.permute(0, 2, 1)
+                        .contiguous()
+                        .view(bs, -1, query_side_len, query_side_len)
+                    )
+                    _query_features_i = F.interpolate(
+                        _query_features_i.float(),
+                        size=(
+                            self.config.lowres_token,
+                            self.config.lowres_token,
+                        ),
+                        mode="bilinear",
+                        align_corners=False,
+                    ).to(dtype=query_features_i.dtype)
+                    _query_features_i = (
+                        _query_features_i.permute(0, 2, 3, 1).contiguous().flatten(1, 2)
+                    )
+                    final_image_features_down_list.append(_query_features_i)
+
+                # interpolate to the final target size
+                if query_side_len != final_height:
+                    query_features_i = (
+                        query_features_i.permute(0, 2, 1)
+                        .contiguous()
+                        .view(bs, -1, query_side_len, query_side_len)
+                    )
+                    if input_high_res:
+                        query_features_i = F.interpolate(
+                            query_features_i.float(),
+                            size=(final_height, final_width),
+                            mode="bilinear",
+                            align_corners=False,
+                        ).to(dtype=query_features_i.dtype)
+                    else:
+                        query_features_i = F.interpolate(
+                            query_features_i.float(),
+                            size=(8, 8),
+                            mode="bilinear",
+                            align_corners=False,
+                        ).to(dtype=query_features_i.dtype)
+                    query_features_i = (
+                        query_features_i.permute(0, 2, 3, 1).contiguous().flatten(1, 2)
+                    )
+                final_image_features_list.append(query_features_i)
+        
+        image_features = torch.cat(final_image_features_list, -1) # image_features.shape: [# frames, 144, 1024]
+        image_features = self.mm_projector(image_features).to(dtype) # image_features.shape: [# frames, 144, 3072] 
+
+        # if (getattr(self.config, "highres", False)) and input_mix_res:
+        #     image_features_down = torch.cat(final_image_features_down_list, -1)
+        #     image_features_down = (
+        #         self.mm_projector(image_features_down).to(dtype)
+        #     )
+
+        image_features = image_features.view(bs, final_height, final_width, -1)
+        return image_features
+        # if (getattr(self.config, "highres", False)) and input_mix_res:
+        #     image_features_down = image_features_down.view(
+        #         bs,
+        #         self.config.lowres_token,
+        #         self.config.lowres_token,
+        #         -1,
+        #     )
+        # image_features_unpadded = []
+        # image_features_downsample = []
+        # final_size = []
+        # if self.config.mm_projector_type == "sva":
+        #     (
+        #         vision_tower_aux_feature_list_final,
+        #         vision_tower_aux_attention_masks_list_final,
+        #     ) = self.rearrange_vision_tower_features_inference(
+        #         vision_tower_aux_feature_list, final_height, image_sizes, unpad=True
+        #     )
+        #     global_context_feature_final = []
+        # for batch_i in range(bs):
+        #     cur_image_feature = image_features[batch_i]
+        #     image_size = image_sizes[batch_i]
+
+        #     cur_image_feature = unpad_image(
+        #         cur_image_feature.unsqueeze(0), image_size
+        #     )
+
+        #     cur_h, cur_w = cur_image_feature.shape[1:3]
+        #     try:  # fix bug for some invalid image
+        #         cur_image_feature = cur_image_feature.view(1, cur_h, cur_w, -1)
+        #         final_size.append((cur_h, cur_w))
+        #     except:
+        #         # print(f"invalid after unpad {image_features[batch_i].shape}, {image_sizes[batch_i]}", flush=True)
+        #         cur_image_feature = image_features[batch_i].unsqueeze(0)
+        #         image_size = image_sizes[batch_i]
+        #         cur_h, cur_w = cur_image_feature.shape[1:3]
+        #         cur_image_feature = cur_image_feature.view(1, cur_h, cur_w, -1)
+        #         final_size.append((cur_h, cur_w))
+
+        #     if (getattr(self.config, "highres", False)) and input_mix_res:
+        #         cur_image_feature_down = unpad_image(
+        #             image_features_down[batch_i].unsqueeze(0),
+        #             (
+        #                 int(
+        #                     image_size[0]
+        #                     / (
+        #                         image_token_len**0.5
+        #                         / self.config.lowres_token
+        #                     )
+        #                 ),
+        #                 int(
+        #                     image_size[1]
+        #                     / (
+        #                         image_token_len**0.5
+        #                         / self.config.lowres_token
+        #                     )
+        #                 ),
+        #             ),
+        #         )
+        #         _cur_h, _cur_w = cur_image_feature_down.shape[1:3]
+
+        #         try:  # fix bug for some invalid image
+        #             cur_image_feature_down = cur_image_feature_down.view(
+        #                 1, _cur_h, _cur_w, -1
+        #             )
+        #         except:
+        #             print("invalid after unpad", flush=True)
+        #             cur_image_feature_down = image_features_down[batch_i].unsqueeze(
+        #                 0
+        #             )
+        #             _cur_h, _cur_w = cur_image_feature_down.shape[1:3]
+        #             cur_image_feature_down = cur_image_feature_down.view(
+        #                 1, _cur_h, _cur_w, -1
+        #             )
+
+        #         cur_image_feature_down = torch.cat(
+        #             (
+        #                 cur_image_feature_down,
+        #                 self.image_newline.view(1, 1, 1, -1)
+        #                 .expand(1, _cur_h, 1, -1)
+        #                 .to(cur_image_feature_down.device),
+        #             ),
+        #             dim=2,
+        #         ).flatten(1, 2)
+
+        #         if split_sizes is None and getattr(self.config, "frame_pos", False):
+        #             frame_pos = (
+        #                 self
+        #                 .get_frame_pos(torch.arange(1))
+        #                 .to(cur_image_feature_down.device)
+        #                 .to(cur_image_feature_down.dtype)
+        #             )
+        #             cur_image_feature_down += frame_pos
+
+        #         image_features_downsample.append(cur_image_feature_down.squeeze(0))
+
+        #     cur_image_feature = torch.cat(
+        #         (
+        #             cur_image_feature,
+        #             self.image_newline.view(1, 1, 1, -1)
+        #             .expand(1, cur_h, 1, -1)
+        #             .to(cur_image_feature.device),
+        #         ),
+        #         dim=2,
+        #     )
+
+        #     if split_sizes is None and getattr(self.config, "frame_pos", False):
+        #         frame_pos = (
+        #             self
+        #             .get_frame_pos(torch.arange(1))
+        #             .to(cur_image_feature.device)
+        #             .to(cur_image_feature.dtype)
+        #         )
+        #         cur_image_feature += frame_pos
+
+        #     cur_image_feature = cur_image_feature.flatten(1, 2)
+        #     image_features_unpadded.append(cur_image_feature.squeeze(0))
+
+        #     if self.config.mm_projector_type == "sva":
+        #         cur_global_context_feature = global_context_feature[batch_i].expand(
+        #             cur_h * cur_w, 1, -1
+        #         )
+        #         global_context_feature_final.append(cur_global_context_feature)
+        # if self.config.mm_projector_type == "sva":
+        #     global_context_feature_final = torch.cat(
+        #         global_context_feature_final, 0
+        #     )
+
+        # if (getattr(self.config, "highres", False)) and input_mix_res:
+        #     image_features = image_features_downsample
+        # else:
+        #     image_features = image_features_unpadded
+
+        # # TODO: image start / end is not implemented here to support pretraining.
+        # if getattr(self.config, "tune_mm_mlp_adapter", False) and getattr(
+        #     self.config, "mm_use_im_start_end", False
+        # ):
+        #     raise NotImplementedError
+
+        # split_image_features_unpadded = None
+        # frame_split_sizes = None
+
+        # if split_sizes is not None:
+        #     split_image_features = []
+        #     split_image_features_unpadded = (
+        #         []
+        #         if (getattr(self.config, "highres", False)) and input_mix_res
+        #         else None
+        #     )
+        #     start_idx = 0
+        #     for split_batch_idx, split_size in enumerate(split_sizes):
+        #         if isinstance(image_features[start_idx : start_idx + split_size], list):
+        #             if getattr(self.config, "frame_pos", False):
+        #                 frame_feature = torch.cat(
+        #                     image_features[start_idx : start_idx + split_size], dim=0
+        #                 ).reshape(split_size, -1, image_features[0].shape[-1])
+        #                 frame_pos = (
+        #                     self
+        #                     .get_frame_pos(selected_frame_indices_all[split_batch_idx])
+        #                     .to(frame_feature.device)
+        #                     .to(frame_feature.dtype)
+        #                 )
+        #                 frame_feature += frame_pos
+        #                 split_image_features.append(
+        #                     frame_feature.reshape(-1, image_features[0].shape[-1])
+        #                 )
+        #             else:
+        #                 split_image_features.append(
+        #                     torch.cat(
+        #                         image_features[start_idx : start_idx + split_size],
+        #                         dim=0,
+        #                     )
+        #                 )
+        #             if (getattr(self.config, "highres", False)) and input_mix_res:
+        #                 if getattr(self.config, "frame_pos", False):
+        #                     frame_feature = torch.cat(
+        #                         image_features_unpadded[
+        #                             start_idx : start_idx + split_size
+        #                         ],
+        #                         dim=0,
+        #                     ).reshape(split_size, -1, image_features[0].shape[-1])
+        #                     frame_pos = (
+        #                         self
+        #                         .get_frame_pos(
+        #                             selected_frame_indices_all[split_batch_idx]
+        #                         )
+        #                         .to(frame_feature.device)
+        #                         .to(frame_feature.dtype)
+        #                     )
+        #                     frame_feature += frame_pos
+        #                     split_image_features_unpadded.append(
+        #                         frame_feature.reshape(-1, image_features[0].shape[-1])
+        #                     )
+        #                 else:
+        #                     split_image_features_unpadded.append(
+        #                         torch.cat(
+        #                             image_features_unpadded[
+        #                                 start_idx : start_idx + split_size
+        #                             ],
+        #                             dim=0,
+        #                         )
+        #                     )
+        #         else:
+        #             if getattr(self.config, "frame_pos", False):
+        #                 frame_feature = image_features[
+        #                     start_idx : start_idx + split_size
+        #                 ].reshape(split_size, -1, image_features[0].shape[-1])
+        #                 frame_pos = (
+        #                     self
+        #                     .get_frame_pos(selected_frame_indices_all[split_batch_idx])
+        #                     .to(frame_feature.device)
+        #                     .to(frame_feature.dtype)
+        #                 )
+        #                 frame_feature += frame_pos
+        #                 split_image_features.append(
+        #                     frame_feature.reshape(-1, image_features[0].shape[-1])
+        #                 )
+        #             else:
+        #                 split_image_features.append(
+        #                     image_features[start_idx : start_idx + split_size]
+        #                 )
+        #             if (getattr(self.config, "highres", False)) and input_mix_res:
+        #                 if getattr(self.config, "frame_pos", False):
+        #                     frame_feature = image_features_unpadded[
+        #                         start_idx : start_idx + split_size
+        #                     ]
+        #                     frame_pos = (
+        #                         self
+        #                         .get_frame_pos(
+        #                             selected_frame_indices_all[split_batch_idx]
+        #                         )
+        #                         .to(frame_feature.device)
+        #                         .to(frame_feature.dtype)
+        #                     )
+        #                     frame_feature += frame_pos
+        #                     split_image_features_unpadded.append(
+        #                         frame_feature.reshape(-1, image_features[0].shape[-1])
+        #                     )
+        #                 else:
+        #                     split_image_features_unpadded.append(
+        #                         image_features_unpadded[
+        #                             start_idx : start_idx + split_size
+        #                         ]
+        #                     )
+        #         start_idx += split_size
+        #     image_features = split_image_features
+        #     frame_split_sizes = split_sizes
+
+
+        # return image_aux_features_list

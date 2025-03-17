@@ -9,7 +9,7 @@ from resource_logging import measure_resource_usage, MeasureResourceUsage
 import logging
 import decord
 
-class EnTubeDataset(Dataset):
+class EngagementDataset(Dataset):
     
     def __init__(
         self,   
@@ -19,30 +19,29 @@ class EnTubeDataset(Dataset):
         self.file_paths = []
         self.image_processors = image_processors
 
-        with MeasureResourceUsage():
-            for folder_path in folder_paths:
-                file_names = os.listdir(folder_path)
-                for file_name in file_names:
-                    file_path = os.path.join(folder_path, file_name)
-                    
-                    # temporarily filter out long videos to handle OOM issues
-                    vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
-                    duration = len(vr) / vr.get_avg_fps()
-                    if duration <= 3600:
-                        self.file_paths.append((file_path, file_name))      
+        for folder_path in folder_paths:
+            file_names = os.listdir(folder_path)
+            for file_name in file_names:
+                file_path = os.path.join(folder_path, file_name)
+                self.file_paths.append((file_path, file_name))
+                
+                # temporarily filter out long videos to handle OOM issues
+                # vr = decord.VideoReader(file_path, ctx=decord.cpu(0), num_threads=1)
+                # duration = len(vr) / vr.get_avg_fps()
+                # if duration <= 3600:
+                #     self.file_paths.append((file_path, file_name))
 
     def __len__(self):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        logging.info(f'Loading sample {self.file_paths[idx][1]}: {os.path.getsize(self.file_paths[idx][0]) / (1024**2):.2f} MB')
+        # logging.info(f'Loading sample {self.file_paths[idx][1]}: {os.path.getsize(self.file_paths[idx][0]) / (1024**2):.2f} MB')
         video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
         return video, image_size, self.file_paths[idx][1]
 
-@measure_resource_usage()
 def collate_fn(batch):
     """
-    batch: list of samples from EnTubeDataset.__getitem__()
+    batch: list of samples from EngagementDataset.__getitem__()
     """
     assert isinstance(batch, list)
     assert isinstance(batch[0], tuple)
