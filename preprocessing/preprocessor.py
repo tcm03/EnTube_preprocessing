@@ -7,7 +7,7 @@ from typing import Optional, List, Tuple
 import json
 import math
 from transformers import BaseImageProcessor
-from resource_logging import measure_resource_usage, MeasureResourceUsage
+from resource_logging import *
 import torch.nn.functional as F
 import logging
 
@@ -496,6 +496,7 @@ class CambrianEncoders(nn.Module):
         logging.info(f'In the beginning: image_sizes: {image_sizes}')
         vision_tower_aux_list = self.vision_tower_aux_list
         image_aux_list = images
+        debug_tensor(f'image_aux_list[0]', image_aux_list[0])        
         split_sizes_ori = [
             1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
         ]
@@ -527,6 +528,7 @@ class CambrianEncoders(nn.Module):
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): DINOv2 time: {time.time() - dinov2_start_time:4f}')
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): selecting frames...')
         # select_frame_start_time = time.time()
+        logging.info(f"split_sizes_ori: {split_sizes_ori}")
         (
             image_aux_features_dino,
             split_sizes,
@@ -560,8 +562,8 @@ class CambrianEncoders(nn.Module):
 
         frame_sizes = []
         logging.info(f'image_sizes: {image_sizes}')
+        logging.info(f'split_sizes: {split_sizes}')
         for i in range(len(image_sizes)):
-            logging.info(f'split_sizes[{i}]: {split_sizes[i]}')
             for j in range(split_sizes[i]):
                 frame_sizes.append(image_sizes[i])
         image_sizes = frame_sizes # [(360, 640), ..., (360, 640)] (len = # frames)

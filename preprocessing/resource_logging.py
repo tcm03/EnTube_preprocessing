@@ -4,6 +4,8 @@ import torch
 import inspect
 import os
 from pathlib import Path
+import numpy as np
+from typing import List, Dict, Optional, Union
 
 # Get all Python files in the project directory
 def get_project_py_files():
@@ -14,6 +16,26 @@ def get_project_py_files():
             if "resource_logging" not in file and file.endswith(".py"):  # Collect all .py files except resource_logging.py
                 project_py_files.add(Path(root) / file)
     return project_py_files
+
+def debug_tensor(prefix: str, tensor: Union[np.ndarray, torch.Tensor]):
+    # Identify the caller frame within the project directory
+    caller_filename = "Unknown"
+    caller_lineno = "Unknown"
+    project_py_files = get_project_py_files()
+    stack = inspect.stack()
+    for frame in stack:
+        try:
+            frame_file = Path(frame.filename).resolve()
+            if frame_file in project_py_files:  # Check if the file is part of the project
+                caller_filename = frame_file
+                caller_lineno = frame.lineno
+                break
+        except Exception:
+            continue  # Skip problematic frames
+    logging.info(f'File: {caller_filename}, Line: {caller_lineno}')
+    if isinstance(tensor, np.ndarray):
+        logging.info(f"{prefix}: [{tensor.shape}, {tensor.dtype}, CPU]")
+    else: logging.info(f"{prefix}: [{tensor.shape}, {tensor.dtype}, {tensor.device}]")
 
 def measure_resource_usage(device=torch.device("cuda:0")):
     # Validate the device and collect project Python files
