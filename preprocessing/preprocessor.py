@@ -218,6 +218,7 @@ class CambrianEncoders(nn.Module):
         vision_tower_aux_feature_rearranged_list = []
         vision_tower_aux_attention_masks_rearranged_list = []
         bs = vision_tower_aux_feature_list[0].shape[0]
+        logging.info(f"In rearrange_vision_tower_features_inference, bs={bs}, len(image_sizes)={len(image_sizes)}, image_sizes[0]={image_sizes[0]}")
         for vision_tower_aux_feature in vision_tower_aux_feature_list:
             aux_height = aux_width = int(vision_tower_aux_feature.shape[1] ** 0.5)
             assert (aux_height // query_side_len) * query_side_len == aux_height
