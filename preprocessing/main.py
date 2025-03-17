@@ -70,6 +70,10 @@ if __name__ == "__main__":
 
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
     processor = CambrianEncoders(cambrianConfig).to(device)
+
+    for vision_tower_aux in processor.vision_tower_aux_list:
+        if not vision_tower_aux.is_loaded:
+            vision_tower_aux.load_model()
     # For inference on multiple GPUs, wrap with DataParallel if more than one GPU is available.
     if torch.cuda.device_count() > 1:
         logging.info(f'Using {torch.cuda.device_count()} GPUs with DataParallel')
@@ -77,12 +81,12 @@ if __name__ == "__main__":
     # When using DataParallel, submodules are under processor.module.
     model_module = processor.module if isinstance(processor, torch.nn.DataParallel) else processor
 
-
     image_processors = []
     for vision_tower_aux in model_module.vision_tower_aux_list:
-        if not vision_tower_aux.is_loaded:
-            vision_tower_aux.load_model()
+        # Explicitly move the image_processor if it isn’t already an nn.Module or wasn’t moved
+        vision_tower_aux.image_processor = vision_tower_aux.image_processor.to(device)
         image_processors.append(vision_tower_aux.image_processor)
+    
 
     folder_paths: List[str] = args.data
     entube_dataset = EngagementDataset(folder_paths, image_processors)
