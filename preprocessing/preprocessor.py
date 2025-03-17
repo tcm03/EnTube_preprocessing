@@ -89,12 +89,13 @@ class CambrianConfig(Qwen2Config):
         return cls(**config_dict)
 
 
-class CambrianEncoders:
+class CambrianEncoders(nn.Module):
 
     def __init__(
         self, 
         config: CambrianConfig
     ) -> None:
+        super().__init__()
         self.dtype = torch.float32
         self.config: CambrianConfig = config
 
