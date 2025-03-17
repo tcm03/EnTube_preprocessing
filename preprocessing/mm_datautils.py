@@ -58,7 +58,8 @@ def process_images(
             list(batch_image_aux) for batch_image_aux in zip(*new_images_aux_list)
         ] # torch.Tensor(C, H, W) new_images_aux_list[num_processor][num_frames]
         new_images_aux_list = [
-            torch.stack(image_aux).half() for image_aux in new_images_aux_list
+            # torch.stack(image_aux).half() for image_aux in new_images_aux_list # @tcm: try full fp32 to match precision of vision encoders
+            torch.stack(image_aux).float() for image_aux in new_images_aux_list
         ] # torch.Tensor(num_frames, C, H, W) new_images_aux_list[num_processor]
         return new_images_aux_list 
     else:
@@ -100,9 +101,11 @@ def process_video_frames(
             img = vr[frame_index].asnumpy()
             sub_videos.append(img)
         sub_videos = np.stack(sub_videos) # shape: (num_frames, height, width, channels)
+        logging.info(f"Before process_images, sub_videos.dtype: {sub_videos.dtype}")
         sub_videos = process_images(sub_videos, image_processors)
         # print(f'@tcm: In process_video_frames(): process_time={time.time()-process_time:4f}')
         assert len(sub_videos) == len(video)
+        logging.info(f"sub_videos[0] dtype: {sub_videos[0].dtype}")
         for j, sub_video in enumerate(sub_videos):
             video[j].append(sub_video)
         
