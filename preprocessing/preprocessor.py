@@ -496,7 +496,8 @@ class CambrianEncoders(nn.Module):
         logging.info(f'In the beginning: image_sizes: {image_sizes}')
         vision_tower_aux_list = self.vision_tower_aux_list
         image_aux_list = images
-        debug_tensor(f'image_aux_list[0]', image_aux_list[0])        
+        for i, image in enumerate(image_aux_list[0]):
+            debug_tensor(f'image_aux_list[0][{i}]', image_aux_list[0][i])        
         split_sizes_ori = [
             1 if image.ndim == 3 else image.shape[0] for image in image_aux_list[0]
         ]
