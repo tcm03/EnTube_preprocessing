@@ -311,6 +311,7 @@ class CambrianEncoders(nn.Module):
     def encode_images(self, image_aux_list, encode_type=None):
         vision_tower_aux_list = self.vision_tower_aux_list
         logging.info('vision_tower_aux_list[0] device: {}'.format(vision_tower_aux_list[0].device))
+        logging.info('vision_tower_aux_list[0] dtype: {}'.format(vision_tower_aux_list[0].dtype))
         image_aux_features_list = []
         chunk_size = 64
         if encode_type == "dino":
@@ -579,7 +580,9 @@ class CambrianEncoders(nn.Module):
                 # debug_tensor(f'image_aux_features_list[{aux_i}]', image_aux_features)
                 mm_proj = getattr(self, "mm_projector_aux_{}".format(aux_i))
                 logging.info(f'mm_projector_aux device: {next(mm_proj[0].parameters()).device}')
+                logging.info(f'mm_projector_aux dtype: {next(mm_proj[0].parameters()).dtype}')
                 logging.info(f'image_aux_features device: {image_aux_features.device}')
+                logging.info(f'image_aux_features dtype: {image_aux_features.dtype}')
                 image_aux_features = getattr(
                     self, "mm_projector_aux_{}".format(aux_i)
                 )(image_aux_features).to(dtype)
