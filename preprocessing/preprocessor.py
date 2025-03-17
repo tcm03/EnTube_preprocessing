@@ -9,6 +9,7 @@ import math
 from transformers import BaseImageProcessor
 from resource_logging import measure_resource_usage, MeasureResourceUsage
 import torch.nn.functional as F
+import logging
 
 def unmask_attention_mask(mask, original_size):
     original_w, original_h = original_size
@@ -572,6 +573,8 @@ class CambrianEncoders:
             for aux_i in range(len(vision_tower_aux_list)):
                 image_aux_features = image_aux_features_list[aux_i]
                 # debug_tensor(f'image_aux_features_list[{aux_i}]', image_aux_features)
+                logging.info(f'mm_projector_aux device: {getattr(self, "mm_projector_aux_{}".format(aux_i)).device}')
+                logging.info(f'image_aux_features device: {image_aux_features.device}')
                 image_aux_features = getattr(
                     self, "mm_projector_aux_{}".format(aux_i)
                 )(image_aux_features).to(dtype)
