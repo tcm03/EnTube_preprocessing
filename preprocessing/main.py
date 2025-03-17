@@ -84,7 +84,7 @@ if __name__ == "__main__":
     image_processors = []
     for vision_tower_aux in model_module.vision_tower_aux_list:
         # Explicitly move the image_processor if it isn’t already an nn.Module or wasn’t moved
-        vision_tower_aux.image_processor = vision_tower_aux.image_processor.to(device)
+        # vision_tower_aux.image_processor = vision_tower_aux.image_processor.to(device)
         image_processors.append(vision_tower_aux.image_processor)
     
 
