@@ -317,6 +317,7 @@ class CambrianEncoders(nn.Module):
         if encode_type == "dino":
             # print(f'@tcm: In CambrianEncoders.encode_images(): dinov2')
             image_aux = image_aux_list[-1]
+            logging.info(f'image_aux dtype: {image_aux.dtype}')
             vision_tower_aux = vision_tower_aux_list[-1]
             if image_aux.shape[0] > chunk_size:
                 image_aux_features_chunks = []
@@ -334,6 +335,7 @@ class CambrianEncoders(nn.Module):
         elif encode_type == "siglip":
             # print(f'@tcm: In CambrianEncoders.encode_images(): siglip')
             image_aux = image_aux_list[0]
+            logging.info(f'image_aux dtype: {image_aux.dtype}')
             vision_tower_aux = vision_tower_aux_list[0]
             if image_aux.shape[0] > chunk_size:
                 image_aux_features_chunks = []
@@ -543,7 +545,9 @@ class CambrianEncoders(nn.Module):
         )
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): select frame time: {time.time() - siglip_start_time:4f}')
         logging.info(f'image_aux_features_siglip device: {image_aux_features_siglip.device}')
+        logging.info(f'image_aux_features_siglip dtype: {image_aux_features_siglip.dtype}')
         logging.info(f'image_aux_features_dino device: {image_aux_features_dino.device}')
+        logging.info(f'image_aux_features_dino dtype: {image_aux_features_dino.dtype}')
         image_aux_features_list = [
             image_aux_features_siglip,
             image_aux_features_dino,
