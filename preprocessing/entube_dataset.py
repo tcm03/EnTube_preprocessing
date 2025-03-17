@@ -37,6 +37,11 @@ class EngagementDataset(Dataset):
     def __getitem__(self, idx):
         # logging.info(f'Loading sample {self.file_paths[idx][1]}: {os.path.getsize(self.file_paths[idx][0]) / (1024**2):.2f} MB')
         video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
+        logging.info(f"video type: {type(video)}")
+        if isinstance(video, torch.Tensor):
+            logging.info(f"video dtype: {video.dtype}")
+        elif isinstance(video, list):
+            logging.info(f"video[0] dtype: {video[0].dtype}")
         return video, image_size, self.file_paths[idx][1]
 
 def collate_fn(batch):
