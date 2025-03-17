@@ -79,10 +79,9 @@ if __name__ == "__main__":
 
 
     image_processors = []
-    for vision_tower_aux in processor.vision_tower_aux_list:
+    for vision_tower_aux in model_module.vision_tower_aux_list:
         if not vision_tower_aux.is_loaded:
             vision_tower_aux.load_model()
-        # vision_tower_aux.to(device)
         image_processors.append(vision_tower_aux.image_processor)
 
     folder_paths: List[str] = args.data
