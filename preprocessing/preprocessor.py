@@ -493,6 +493,7 @@ class CambrianEncoders(nn.Module):
         images: List[torch.Tensor],
         image_sizes: List[Tuple[int, int]],
     ):
+        logging.info(f'In the beginning: image_sizes: {image_sizes}')
         vision_tower_aux_list = self.vision_tower_aux_list
         image_aux_list = images
         split_sizes_ori = [
@@ -558,7 +559,9 @@ class CambrianEncoders(nn.Module):
         dtype = new_image_aux_list[0].dtype
 
         frame_sizes = []
+        logging.info(f'image_sizes: {image_sizes}')
         for i in range(len(image_sizes)):
+            logging.info(f'split_sizes[{i}]: {split_sizes[i]}')
             for j in range(split_sizes[i]):
                 frame_sizes.append(image_sizes[i])
         image_sizes = frame_sizes # [(360, 640), ..., (360, 640)] (len = # frames)

@@ -35,7 +35,9 @@ class EngagementDataset(Dataset):
         return len(self.file_paths)
 
     def __getitem__(self, idx):
-        # logging.info(f'Loading sample {self.file_paths[idx][1]}: {os.path.getsize(self.file_paths[idx][0]) / (1024**2):.2f} MB')
+        vr = decord.VideoReader(self.file_paths[idx][0], ctx=decord.cpu(0), num_threads=1)
+        duration = len(vr) / vr.get_avg_fps()
+        logging.info(f'Loading sample {self.file_paths[idx][1]}: {duration} frames')
         video, image_size = process_video_frames(self.file_paths[idx][0], self.image_processors)
         logging.info(f"video type: {type(video)}")
         if isinstance(video, torch.Tensor):
