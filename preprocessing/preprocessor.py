@@ -310,6 +310,7 @@ class CambrianEncoders(nn.Module):
     
     def encode_images(self, image_aux_list, encode_type=None):
         vision_tower_aux_list = self.vision_tower_aux_list
+        logging.info('vision_tower_aux_list[0] device: {}'.format(vision_tower_aux_list[0].device))
         image_aux_features_list = []
         chunk_size = 64
         if encode_type == "dino":
@@ -540,6 +541,8 @@ class CambrianEncoders(nn.Module):
             new_image_aux_list, encode_type="siglip"
         )
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): select frame time: {time.time() - siglip_start_time:4f}')
+        logging.info(f'image_aux_features_siglip device: {image_aux_features_siglip.device}')
+        logging.info(f'image_aux_features_dino device: {image_aux_features_dino.device}')
         image_aux_features_list = [
             image_aux_features_siglip,
             image_aux_features_dino,
