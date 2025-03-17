@@ -53,7 +53,7 @@ def collate_fn(batch):
     assert isinstance(batch, list)
     assert isinstance(batch[0], tuple)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    image_sizes = batch[0][1]
+    image_sizes = [vid_data[1] for vid_data in batch]
     batch_videos = [video for video, _, _ in batch] # ignore image_size and file_name
     # batch_videos = [[video.to(device) for video in videos] for videos in zip(*batch_videos)]
     tmp_batch_videos = []

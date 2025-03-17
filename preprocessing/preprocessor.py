@@ -491,7 +491,7 @@ class CambrianEncoders(nn.Module):
         self,
         # input_ids,
         images: List[torch.Tensor],
-        image_sizes: List[Tuple[int, int]],
+        image_sizes: List[Tuple[int, int]], # @tcm: List of frame sizes of videos in a batch (frames in a video have same size)
     ):
         logging.info(f'In the beginning: image_sizes: {image_sizes}')
         vision_tower_aux_list = self.vision_tower_aux_list
@@ -519,8 +519,10 @@ class CambrianEncoders(nn.Module):
                     tmp_image_aux.append(x)
                 image_aux = tmp_image_aux
                 
-            concat_image_aux = torch.cat([image for image in image_aux], dim=0)
-            new_image_aux_list.append(concat_image_aux)
+            # @tcm: image_aux is a list of tensors of shape (# frames, C, H, W)
+            # @tcm: We concatenate all videos along the num frames dimension
+            concat_image_aux = torch.cat([image for image in image_aux], dim=0) # (sum # frames, C, H, W)
+            new_image_aux_list.append(concat_image_aux) # for each vision encoder
         # print(f'@tcm: In CambrianEncoders.prepare_mm_features(): extracting DINOv2 features...')
         # This encode_images() invocation adds ~ 7.6 GB VRAM
         image_aux_features_dino = self.encode_images(
