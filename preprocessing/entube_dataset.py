@@ -55,7 +55,7 @@ def collate_fn(batch):
         tmp = []
         for j, video in enumerate(videos):
             # print(f'@tcm: video {j} shape: {video.shape}')
-            video = video.to(device)
+            # video = video.to(device) # try using data parallel w/o manual moving
             tmp.append(video)
         tmp_batch_videos.append(tmp)
     batch_videos = tmp_batch_videos
