@@ -69,11 +69,13 @@ if __name__ == "__main__":
     logging.info(f'Using device: {device}')
 
     cambrianConfig = CambrianConfig.from_json_file(args.config_file)
-    processor = CambrianEncoders(cambrianConfig).to(device)
+    processor = CambrianEncoders(cambrianConfig)
 
     for vision_tower_aux in processor.vision_tower_aux_list:
         if not vision_tower_aux.is_loaded:
             vision_tower_aux.load_model()
+
+    processor = processor.to(device)
     # For inference on multiple GPUs, wrap with DataParallel if more than one GPU is available.
     if torch.cuda.device_count() > 1:
         logging.info(f'Using {torch.cuda.device_count()} GPUs with DataParallel')
